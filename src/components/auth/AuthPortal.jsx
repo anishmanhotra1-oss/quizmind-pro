@@ -62,9 +62,9 @@ export function AuthPortal({ onStudentLogin, onAdminLogin }) {
     }}>
       
       {/* Dribbble-Inspired Split Layout Container */}
-      <div className="glass-panel" style={{
+      <div className="glass-panel auth-split-container" style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
         borderRadius: 'var(--radius-xl)',
         overflow: 'hidden',
         boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.4)',
@@ -72,7 +72,7 @@ export function AuthPortal({ onStudentLogin, onAdminLogin }) {
       }}>
         
         {/* Left Panel: Visual Hero & Feature Highlights (Dribbble Showcase Style) */}
-        <div style={{
+        <div className="auth-left-panel" style={{
           background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.96), rgba(76, 29, 149, 0.92))',
           padding: '3.5rem 2.5rem',
           display: 'flex',
@@ -195,7 +195,7 @@ export function AuthPortal({ onStudentLogin, onAdminLogin }) {
         </div>
 
         {/* Right Panel: Interactive Login Card */}
-        <div style={{ padding: '3.5rem 2.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div className="auth-right-panel" style={{ padding: '3.5rem 2.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           
           {/* Entrance Selector Tabs */}
           <div style={{
