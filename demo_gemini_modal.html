@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gemini API Key Modal - Interactive Tailwind & Theme Demo</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            indigo: {
+              500: '#6366f1',
+              600: '#4f46e5',
+            },
+            violet: {
+              500: '#8b5cf6',
+              600: '#7c3aed',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors duration-300 font-sans flex flex-col justify-between">
+
+  <!-- Header Navigation -->
+  <header class="w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 transition-colors duration-300">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <i data-lucide="brain" class="w-5 h-5 text-white"></i>
+        </div>
+        <span class="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">QuizMind <span class="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">AI</span></span>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <!-- Day / Night Mode Switcher Button -->
+        <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2.5 rounded-full border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-amber-400 hover:scale-105 transition-all">
+          <i id="themeIcon" data-lucide="sun" class="w-5 h-5"></i>
+        </button>
+
+        <!-- Trigger Modal Button -->
+        <button onclick="openModal()" class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all">
+          <i data-lucide="key" class="w-4 h-4"></i>
+          Configure Gemini API
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Hero Demo Area -->
+  <main class="max-w-4xl mx-auto px-6 py-20 text-center flex-1 flex flex-col items-center justify-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider mb-6">
+      <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Interactive Tailwind Modal Demo
+    </div>
+    <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-4 tracking-tight">
+      Redesigned <span class="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">Gemini API Key Modal</span>
+    </h1>
+    <p class="text-slate-600 dark:text-slate-400 text-lg max-w-xl mb-8">
+      Featuring fixed centered positioning (`fixed inset-0 z-50`), Day/Night theme toggles, status indicator badges, and password eye toggles.
+    </p>
+
+    <button onclick="openModal()" class="px-6 py-3.5 rounded-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-500/30 hover:scale-105 transition-all">
+      Open API Modal Preview
+    </button>
+  </main>
+
+  <!-- REDESIGNED GEMINI API KEY MODAL -->
+  <!-- Position Clipping Fix: fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md -->
+  <div id="geminiModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 transition-all duration-300 opacity-0 pointer-events-none">
+    
+    <!-- Modal Card Box -->
+    <div class="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-indigo-500/30 rounded-3xl p-6 md:p-8 shadow-2xl dark:shadow-indigo-500/10 text-slate-900 dark:text-slate-100 transition-all transform scale-95 duration-300" id="modalCard">
+      
+      <!-- Close Button -->
+      <button onclick="closeModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Header with Glowing Google Gemini Sparkle Icon -->
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-600/30 border border-indigo-500/30 flex items-center justify-center shadow-lg shadow-violet-500/30 animate-pulse">
+          <i data-lucide="sparkles" class="w-6 h-6 text-violet-600 dark:text-violet-400"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900 dark:text-white">Google Gemini AI Setup</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Power your quiz generation engine with Gemini 1.5 Flash</p>
+        </div>
+      </div>
+
+      <!-- Helper Status Badge -->
+      <div class="mb-5">
+        <span id="keyStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+          <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+          Gemini API Key Active & Ready
+        </span>
+      </div>
+
+      <p class="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+        Enter your official Google Gemini API Key below. Your key is stored securely in your browser session to generate structured quizzes from course documents.
+      </p>
+
+      <!-- Form -->
+      <form onsubmit="saveApiKey(event)">
+        <!-- Input with Eye Toggle -->
+        <div class="mb-6">
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+            Gemini API Key
+          </label>
+          <div class="relative">
+            <input 
+              id="apiKeyInput" 
+              type="password" 
+              value="AIzaSyB3k9X_ExampleGeminiKeyPayload"
+              class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all pr-12"
+              placeholder="AIzaSy..." 
+              required
+            />
+            <button 
+              type="button" 
+              onclick="togglePasswordVisibility()" 
+              class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+            >
+              <i id="eyeIcon" data-lucide="eye" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Success Toast -->
+        <div id="saveToast" class="hidden mb-4 text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i> API Key saved successfully!
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" onclick="closeModal()" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+            Cancel
+          </button>
+          <button type="submit" class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] transition-all">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            Save API Key
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="py-6 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-500">
+    QuizMind AI • Modern Tailwind CSS Theme & Modal Demo
+  </footer>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Theme Toggle Logic
+    let isDark = true;
+    function toggleTheme() {
+      isDark = !isDark;
+      const html = document.documentElement;
+      const themeIcon = document.getElementById('themeIcon');
+
+      if (isDark) {
+        html.classList.add('dark');
+        themeIcon.setAttribute('data-lucide', 'sun');
+      } else {
+        html.classList.remove('dark');
+        themeIcon.setAttribute('data-lucide', 'moon');
+      }
+      lucide.createIcons();
+    }
+
+    // Modal Control Logic
+    function openModal() {
+      const modal = document.getElementById('geminiModal');
+      const card = document.getElementById('modalCard');
+      modal.classList.remove('hidden', 'pointer-events-none');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        card.classList.remove('scale-95');
+        card.classList.add('scale-100');
+      }, 10);
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('geminiModal');
+      const card = document.getElementById('modalCard');
+      modal.classList.add('opacity-0');
+      card.classList.remove('scale-100');
+      card.classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden', 'pointer-events-none');
+      }, 300);
+    }
+
+    // Password Visibility Toggle
+    let showPassword = false;
+    function togglePasswordVisibility() {
+      showPassword = !showPassword;
+      const input = document.getElementById('apiKeyInput');
+      const eyeIcon = document.getElementById('eyeIcon');
+      input.type = showPassword ? 'text' : 'password';
+      eyeIcon.setAttribute('data-lucide', showPassword ? 'eye-off' : 'eye');
+      lucide.createIcons();
+    }
+
+    // Form Submit Toast
+    function saveApiKey(e) {
+      e.preventDefault();
+      const toast = document.getElementById('saveToast');
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+        closeModal();
+      }, 1200);
+    }
+  </script>
+</body>
+</html>

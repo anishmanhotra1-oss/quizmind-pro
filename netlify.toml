@@ -1,0 +1,11 @@
+# Netlify Configuration File for QuizMind AI
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Redirect SPA (Single Page Application) routing to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

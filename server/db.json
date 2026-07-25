@@ -1,0 +1,397 @@
+{
+  "quizzes": [
+    {
+      "id": "quiz-1785004380213",
+      "admin_id": "admin-1",
+      "title": "Quiz: Daily CA Notes 21-07-2026_90429880_2026_07_21_17_47",
+      "access_code": "433016",
+      "document_url": null,
+      "time_limit_mins": 5,
+      "is_published": true,
+      "created_at": "2026-07-25T18:33:00.213Z"
+    },
+    {
+      "id": "quiz-1785004724070",
+      "admin_id": "admin-1",
+      "title": "Quiz: Daily CA Notes 21-07-2026_90429880_2026_07_21_17_47",
+      "access_code": "698462",
+      "document_url": null,
+      "time_limit_mins": 5,
+      "is_published": true,
+      "created_at": "2026-07-25T18:38:44.070Z"
+    },
+    {
+      "id": "quiz-1785009324504",
+      "admin_id": "admin-1",
+      "title": "CA 25-7-2026",
+      "access_code": "770882",
+      "document_url": null,
+      "time_limit_mins": 5,
+      "is_published": true,
+      "created_at": "2026-07-25T19:55:24.702Z"
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-1785004380217-0",
+      "quiz_id": "quiz-1785004380213",
+      "question_text": "[Doc Reference Q1] Ayyappan held that walking: What statement best describes this concept from the document?",
+      "options": [
+        "Ayyappan held that walking on demarcated footpaths is a fundamental constit...",
+        "Unrelated reference to Courses",
+        "Alternative interpretation regarding Civils",
+        "Secondary factor involving Android"
+      ],
+      "correct_option_index": 0,
+      "explanation": "Extracted directly from text: \"Ayyappan held that walking on demarcated footpaths is a fundamental constitutional right under Article 19(1)(d) and Article 21 .\"",
+      "created_at": "2026-07-25T18:33:00.217Z"
+    },
+    {
+      "id": "q-1785004380217-1",
+      "quiz_id": "quiz-1785004380213",
+      "question_text": "[Doc Reference Q2] Supreme Court ruling on: What statement best describes this concept from the document?",
+      "options": [
+        "Unrelated reference to Daily",
+        "Alternative interpretation regarding Android",
+        "Supreme Court ruling on walkability ● The Court held that pedestrians have ...",
+        "Secondary factor involving Courses"
+      ],
+      "correct_option_index": 2,
+      "explanation": "Extracted directly from text: \"Supreme Court ruling on walkability ● The Court held that pedestrians have a right to safe footpaths and footways .\"",
+      "created_at": "2026-07-25T18:33:00.217Z"
+    },
+    {
+      "id": "q-1785004380217-2",
+      "quiz_id": "quiz-1785004380213",
+      "question_text": "[Doc Reference Q3] It directed States and: What statement best describes this concept from the document?",
+      "options": [
+        "It directed States and Union Territories to frame policies and guidelines f...",
+        "Alternative interpretation regarding Courses",
+        "Secondary factor involving Daily",
+        "Unrelated reference to Competitive"
+      ],
+      "correct_option_index": 0,
+      "explanation": "Extracted directly from text: \"It directed States and Union Territories to frame policies and guidelines for the provision and maintenance of footpaths.\"",
+      "created_at": "2026-07-25T18:33:00.217Z"
+    },
+    {
+      "id": "q-1785004380217-3",
+      "quiz_id": "quiz-1785004380213",
+      "question_text": "[Doc Reference Q4] ● Described walkability as: What statement best describes this concept from the document?",
+      "options": [
+        "Secondary factor involving Competitive",
+        "Unrelated reference to Exams",
+        "● Described walkability as a public health intervention , a road safety mea...",
+        "Alternative interpretation regarding Daily"
+      ],
+      "correct_option_index": 2,
+      "explanation": "Extracted directly from text: \"● Described walkability as a public health intervention , a road safety measure , and a democratic test .\"",
+      "created_at": "2026-07-25T18:33:00.217Z"
+    },
+    {
+      "id": "q-1785004380217-4",
+      "quiz_id": "quiz-1785004380213",
+      "question_text": "[Doc Reference Q5] ● The judgment moves: What statement best describes this concept from the document?",
+      "options": [
+        "Secondary factor involving Exams",
+        "Unrelated reference to Current",
+        "Alternative interpretation regarding Competitive",
+        "● The judgment moves the footpath from municipal housekeeping to the centre..."
+      ],
+      "correct_option_index": 3,
+      "explanation": "Extracted directly from text: \"● The judgment moves the footpath from municipal housekeeping to the centre of constitutional rights .\"",
+      "created_at": "2026-07-25T18:33:00.217Z"
+    },
+    {
+      "id": "q-1785004380218-5",
+      "quiz_id": "quiz-1785004380213",
+      "question_text": "[Doc Reference Q6] Health significance of walking: What statement best describes this concept from the document?",
+      "options": [
+        "Secondary factor involving Current",
+        "Alternative interpretation regarding Exams",
+        "Unrelated reference to Affairs",
+        "Health significance of walking ● Diabetes , hypertension , fatty liver dise..."
+      ],
+      "correct_option_index": 3,
+      "explanation": "Extracted directly from text: \"Health significance of walking ● Diabetes , hypertension , fatty liver disease , and obesity are rising rapidly.\"",
+      "created_at": "2026-07-25T18:33:00.282Z"
+    },
+    {
+      "id": "q-1785004380283-6",
+      "quiz_id": "quiz-1785004380213",
+      "question_text": "[Doc Reference Q7] ● Walking and increased: What statement best describes this concept from the document?",
+      "options": [
+        "● Walking and increased physical activity are among the low- and no-cost in...",
+        "Alternative interpretation regarding Current",
+        "Unrelated reference to Source",
+        "Secondary factor involving Affairs"
+      ],
+      "correct_option_index": 0,
+      "explanation": "Extracted directly from text: \"● Walking and increased physical activity are among the low- and no-cost interventions to halt and reverse metabolic diseases.\"",
+      "created_at": "2026-07-25T18:33:00.303Z"
+    },
+    {
+      "id": "q-1785004380309-7",
+      "quiz_id": "quiz-1785004380213",
+      "question_text": "[Doc Reference Q8] ● WHO India Physical: What statement best describes this concept from the document?",
+      "options": [
+        "● WHO India Physical Activity Profile 2024 estimates 49.4% of Indian adults...",
+        "Alternative interpretation regarding Affairs",
+        "Secondary factor involving Source",
+        "Unrelated reference to Hindu"
+      ],
+      "correct_option_index": 0,
+      "explanation": "Extracted directly from text: \"● WHO India Physical Activity Profile 2024 estimates 49.4% of Indian adults do not meet recommended physical activity levels.\"",
+      "created_at": "2026-07-25T18:33:00.310Z"
+    },
+    {
+      "id": "q-1785004380310-8",
+      "quiz_id": "quiz-1785004380213",
+      "question_text": "[Doc Reference Q9] Among women , the: What statement best describes this concept from the document?",
+      "options": [
+        "Among women , the figure is 57.2% .",
+        "Secondary factor involving Hindu",
+        "Alternative interpretation regarding Source",
+        "Unrelated reference to July"
+      ],
+      "correct_option_index": 0,
+      "explanation": "Extracted directly from text: \"Among women , the figure is 57.2% .\"",
+      "created_at": "2026-07-25T18:33:00.310Z"
+    },
+    {
+      "id": "q-1785004380311-9",
+      "quiz_id": "quiz-1785004380213",
+      "question_text": "[Doc Reference Q10] Among children and adolescents: What statement best describes this concept from the document?",
+      "options": [
+        "Secondary factor involving July",
+        "Alternative interpretation regarding Hindu",
+        "Unrelated reference to Page",
+        "Among children and adolescents (11–17 years) , it is 74% ."
+      ],
+      "correct_option_index": 3,
+      "explanation": "Extracted directly from text: \"Among children and adolescents (11–17 years) , it is 74% .\"",
+      "created_at": "2026-07-25T18:33:00.311Z"
+    },
+    {
+      "id": "q-1785004724070-0",
+      "quiz_id": "quiz-1785004724070",
+      "question_text": "[Doc Reference Q1] Ayyappan held that walking: What statement best describes this concept from the document?",
+      "options": [
+        "Secondary factor involving Android",
+        "Ayyappan held that walking on demarcated footpaths is a fundamental constit...",
+        "Alternative interpretation regarding Civils",
+        "Unrelated reference to Courses"
+      ],
+      "correct_option_index": 1,
+      "explanation": "Extracted directly from text: \"Ayyappan held that walking on demarcated footpaths is a fundamental constitutional right under Article 19(1)(d) and Article 21 .\"",
+      "created_at": "2026-07-25T18:38:44.070Z"
+    },
+    {
+      "id": "q-1785004724070-1",
+      "quiz_id": "quiz-1785004724070",
+      "question_text": "[Doc Reference Q2] Supreme Court ruling on: What statement best describes this concept from the document?",
+      "options": [
+        "Unrelated reference to Daily",
+        "Secondary factor involving Courses",
+        "Supreme Court ruling on walkability ● The Court held that pedestrians have ...",
+        "Alternative interpretation regarding Android"
+      ],
+      "correct_option_index": 2,
+      "explanation": "Extracted directly from text: \"Supreme Court ruling on walkability ● The Court held that pedestrians have a right to safe footpaths and footways .\"",
+      "created_at": "2026-07-25T18:38:44.070Z"
+    },
+    {
+      "id": "q-1785004724070-2",
+      "quiz_id": "quiz-1785004724070",
+      "question_text": "[Doc Reference Q3] It directed States and: What statement best describes this concept from the document?",
+      "options": [
+        "Alternative interpretation regarding Courses",
+        "Unrelated reference to Competitive",
+        "It directed States and Union Territories to frame policies and guidelines f...",
+        "Secondary factor involving Daily"
+      ],
+      "correct_option_index": 2,
+      "explanation": "Extracted directly from text: \"It directed States and Union Territories to frame policies and guidelines for the provision and maintenance of footpaths.\"",
+      "created_at": "2026-07-25T18:38:44.070Z"
+    },
+    {
+      "id": "q-1785004724070-3",
+      "quiz_id": "quiz-1785004724070",
+      "question_text": "[Doc Reference Q4] ● Described walkability as: What statement best describes this concept from the document?",
+      "options": [
+        "Alternative interpretation regarding Daily",
+        "● Described walkability as a public health intervention , a road safety mea...",
+        "Unrelated reference to Exams",
+        "Secondary factor involving Competitive"
+      ],
+      "correct_option_index": 1,
+      "explanation": "Extracted directly from text: \"● Described walkability as a public health intervention , a road safety measure , and a democratic test .\"",
+      "created_at": "2026-07-25T18:38:44.070Z"
+    },
+    {
+      "id": "q-1785004724070-4",
+      "quiz_id": "quiz-1785004724070",
+      "question_text": "[Doc Reference Q5] ● The judgment moves: What statement best describes this concept from the document?",
+      "options": [
+        "● The judgment moves the footpath from municipal housekeeping to the centre...",
+        "Alternative interpretation regarding Competitive",
+        "Secondary factor involving Exams",
+        "Unrelated reference to Current"
+      ],
+      "correct_option_index": 0,
+      "explanation": "Extracted directly from text: \"● The judgment moves the footpath from municipal housekeeping to the centre of constitutional rights .\"",
+      "created_at": "2026-07-25T18:38:44.070Z"
+    },
+    {
+      "id": "q-1785004724070-5",
+      "quiz_id": "quiz-1785004724070",
+      "question_text": "[Doc Reference Q6] Health significance of walking: What statement best describes this concept from the document?",
+      "options": [
+        "Alternative interpretation regarding Exams",
+        "Secondary factor involving Current",
+        "Health significance of walking ● Diabetes , hypertension , fatty liver dise...",
+        "Unrelated reference to Affairs"
+      ],
+      "correct_option_index": 2,
+      "explanation": "Extracted directly from text: \"Health significance of walking ● Diabetes , hypertension , fatty liver disease , and obesity are rising rapidly.\"",
+      "created_at": "2026-07-25T18:38:44.070Z"
+    },
+    {
+      "id": "q-1785004724070-6",
+      "quiz_id": "quiz-1785004724070",
+      "question_text": "[Doc Reference Q7] ● Walking and increased: What statement best describes this concept from the document?",
+      "options": [
+        "Alternative interpretation regarding Current",
+        "● Walking and increased physical activity are among the low- and no-cost in...",
+        "Secondary factor involving Affairs",
+        "Unrelated reference to Source"
+      ],
+      "correct_option_index": 1,
+      "explanation": "Extracted directly from text: \"● Walking and increased physical activity are among the low- and no-cost interventions to halt and reverse metabolic diseases.\"",
+      "created_at": "2026-07-25T18:38:44.070Z"
+    },
+    {
+      "id": "q-1785004724070-7",
+      "quiz_id": "quiz-1785004724070",
+      "question_text": "[Doc Reference Q8] ● WHO India Physical: What statement best describes this concept from the document?",
+      "options": [
+        "Unrelated reference to Hindu",
+        "Secondary factor involving Source",
+        "Alternative interpretation regarding Affairs",
+        "● WHO India Physical Activity Profile 2024 estimates 49.4% of Indian adults..."
+      ],
+      "correct_option_index": 3,
+      "explanation": "Extracted directly from text: \"● WHO India Physical Activity Profile 2024 estimates 49.4% of Indian adults do not meet recommended physical activity levels.\"",
+      "created_at": "2026-07-25T18:38:44.070Z"
+    },
+    {
+      "id": "q-1785004724070-8",
+      "quiz_id": "quiz-1785004724070",
+      "question_text": "[Doc Reference Q9] Among women , the: What statement best describes this concept from the document?",
+      "options": [
+        "Alternative interpretation regarding Source",
+        "Secondary factor involving Hindu",
+        "Unrelated reference to July",
+        "Among women , the figure is 57.2% ."
+      ],
+      "correct_option_index": 3,
+      "explanation": "Extracted directly from text: \"Among women , the figure is 57.2% .\"",
+      "created_at": "2026-07-25T18:38:44.070Z"
+    },
+    {
+      "id": "q-1785004724070-9",
+      "quiz_id": "quiz-1785004724070",
+      "question_text": "[Doc Reference Q10] Among children and adolescents: What statement best describes this concept from the document?",
+      "options": [
+        "Among children and adolescents (11–17 years) , it is 74% .",
+        "Unrelated reference to Page",
+        "Secondary factor involving July",
+        "Alternative interpretation regarding Hindu"
+      ],
+      "correct_option_index": 0,
+      "explanation": "Extracted directly from text: \"Among children and adolescents (11–17 years) , it is 74% .\"",
+      "created_at": "2026-07-25T18:38:44.070Z"
+    },
+    {
+      "id": "q-1785009324722-0",
+      "quiz_id": "quiz-1785009324504",
+      "question_text": "[Doc Reference Q1] The Prime Minister of: What statement best describes this concept from the document?",
+      "options": [
+        "Secondary factor involving Track",
+        "Alternative interpretation regarding Fast",
+        "The Prime Minister of India announced the establishment of Fast-Track Court...",
+        "Unrelated reference to Courts"
+      ],
+      "correct_option_index": 2,
+      "explanation": "Extracted directly from text: \"The Prime Minister of India announced the establishment of Fast-Track Courts (FTCs) to ensure swift and stringent punishment for individuals and syndicates involved in public examination paper leaks.\"",
+      "created_at": "2026-07-25T19:55:24.789Z"
+    },
+    {
+      "id": "q-1785009324789-1",
+      "quiz_id": "quiz-1785009324504",
+      "question_text": "[Doc Reference Q2] This policy directive comes: What statement best describes this concept from the document?",
+      "options": [
+        "Secondary factor involving Courts",
+        "Alternative interpretation regarding Track",
+        "This policy directive comes in response to the massive nationwide protests ...",
+        "Unrelated reference to Tackle"
+      ],
+      "correct_option_index": 2,
+      "explanation": "Extracted directly from text: \"This policy directive comes in response to the massive nationwide protests over irregularities in the NEET-UG 2026 examination .\"",
+      "created_at": "2026-07-25T19:55:24.789Z"
+    },
+    {
+      "id": "q-1785009324789-2",
+      "quiz_id": "quiz-1785009324504",
+      "question_text": "[Doc Reference Q3] While FTCs provide timely: What statement best describes this concept from the document?",
+      "options": [
+        "Unrelated reference to Public",
+        "Secondary factor involving Tackle",
+        "Alternative interpretation regarding Courts",
+        "While FTCs provide timely judicial remedies, preventing paper leaks require..."
+      ],
+      "correct_option_index": 3,
+      "explanation": "Extracted directly from text: \"While FTCs provide timely judicial remedies, preventing paper leaks requires broader institutional reforms , including strengthening the National Testing Agency (NTA) , implementing the Dr.\"",
+      "created_at": "2026-07-25T19:55:24.789Z"
+    },
+    {
+      "id": "q-1785009324789-3",
+      "quiz_id": "quiz-1785009324504",
+      "question_text": "[Doc Reference Q4] Radhakrishnan Committee (2024) recommendations,: What statement best describes this concept from the document?",
+      "options": [
+        "Secondary factor involving Public",
+        "Radhakrishnan Committee (2024) recommendations, adopting secure digital tec...",
+        "Alternative interpretation regarding Tackle",
+        "Unrelated reference to Examination"
+      ],
+      "correct_option_index": 1,
+      "explanation": "Extracted directly from text: \"Radhakrishnan Committee (2024) recommendations, adopting secure digital technologies, and enhancing accountability.\"",
+      "created_at": "2026-07-25T19:55:24.789Z"
+    },
+    {
+      "id": "q-1785009324789-4",
+      "quiz_id": "quiz-1785009324504",
+      "question_text": "[Doc Reference Q5] What are Fast-Track Courts: What statement best describes this concept from the document?",
+      "options": [
+        "Unrelated reference to Paper",
+        "Secondary factor involving Examination",
+        "Alternative interpretation regarding Public",
+        "What are Fast-Track Courts (FTCs)?"
+      ],
+      "correct_option_index": 3,
+      "explanation": "Extracted directly from text: \"What are Fast-Track Courts (FTCs)?\"",
+      "created_at": "2026-07-25T19:55:24.789Z"
+    }
+  ],
+  "attempts": [
+    {
+      "id": "att-1785006580215",
+      "quiz_id": "quiz-1785004724070",
+      "student_name": "abhishek",
+      "score": 30,
+      "total_questions": 10,
+      "time_spent_seconds": 33,
+      "completed_at": "2026-07-25T19:09:40.215Z"
+    }
+  ]
+}
