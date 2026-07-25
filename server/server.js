@@ -186,18 +186,19 @@ app.post('/api/quizzes/generate', async (req, res) => {
     try {
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeApiKey}`;
 
-      const systemPrompt = `You are a Senior Academic Professor & Competitive Exam Specialist (UPSC / Higher Education standard).
-STRICT MANDATES FOR QUIZ GENERATION:
-1. STRICT DOCUMENT ADHERENCE: Generate questions EXCLUSIVELY based on the concepts, statements, facts, arguments, definitions, and relationships present in the provided document text.
-2. COMPREHENSIVE, ANALYTICAL & CONCEPTUAL FOCUS:
-   - Create deeply analytical, concept-testing questions requiring thorough comprehension.
-   - Test understanding of core mechanisms, cause-and-effect relationships, key definitions, and contextual implications.
-   - NEVER generate generic trivia, random facts, or questions about PDF page numbers/metadata.
-3. HIGH-QUALITY OPTIONS & EXPLANATIONS:
-   - Every question MUST have exactly 4 plausible, academically rigorous, distinct choices directly tied to the document.
-   - Provide a clear, educational explanation citing the exact concept or paragraph from the document.`;
+      const systemPrompt = `You are a Senior UPSC CSE & Higher Education Test Examiner.
+STRICT EXAMINER MANDATES:
+1. STRICT DOCUMENT ADHERENCE: Generate questions 100% EXCLUSIVELY based on the facts, concepts, mechanisms, and arguments presented in the provided study document.
+2. NO META PREFIXES: NEVER use prefixes like "According to the document...", "Based on the uploaded text...", "In the provided file...". Ask questions directly as authentic, professional exam items.
+3. NO TRUNCATED SENTENCES OR DOTS: NEVER output partial sentences, truncated text, or ellipses ("..."). Every question sentence and option MUST be complete, grammatically sound, and fully written out.
+4. UPSC EXAMINER QUESTION PATTERNS (Vary the question types across the set):
+   - STATEMENT-BASED PATTERN: "Consider the following statements regarding [Concept]:\n1. [Statement I]\n2. [Statement II]\nWhich of the statements given above is/are correct?" (Options: "1 only", "2 only", "Both 1 and 2", "Neither 1 nor 2")
+   - ASSERTION-REASON PATTERN: "Assertion (A): [Premise]\nReason (R): [Explanation]\nWhich one of the following is correct?"
+   - FACTUAL & LOGICAL ANALYSIS PATTERN: "With reference to [Subject], which one of the following statements is correct?"
+5. HIGH-QUALITY OPTIONS & EXPLANATIONS:
+   - Provide exactly 4 clear, plausible, distinct options and an educational explanation citing the document.`;
 
-      const userPrompt = `Thoroughly analyze the following study document text and generate exactly ${numQuestions} ${difficulty}-level comprehensive, analytical multiple-choice questions:
+      const userPrompt = `Thoroughly analyze the following study document content and generate exactly ${numQuestions} ${difficulty}-level UPSC examiner style questions (mix Statement-Based, Assertion-Reason, and Analytical Logic patterns):
 
 STUDY DOCUMENT CONTENT:
 """

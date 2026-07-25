@@ -98,11 +98,11 @@ export function generateSmartFallbackQuiz(documentText, count = 5, difficulty = 
     throw new Error('Not enough readable text in document to generate a quiz.');
   }
 
-  // Extract substantive sentences
+  // Extract complete substantive sentences
   const sentences = clean
     .split(/(?<=[.!?])\s+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 30 && s.length < 300 && !/^(page|table|figure|http|www|\d+$)/i.test(s));
+    .map(s => s.trim().replace(/^[^a-zA-Z0-9]+/, ''))
+    .filter(s => s.length > 35 && s.length < 280 && !/^(page|table|figure|http|www|\d+$)/i.test(s));
 
   if (sentences.length === 0) {
     throw new Error('Could not find enough structured paragraphs in uploaded document.');
@@ -112,43 +112,67 @@ export function generateSmartFallbackQuiz(documentText, count = 5, difficulty = 
   const targetCount = Math.min(count, Math.max(3, sentences.length));
 
   for (let i = 0; i < targetCount; i++) {
-    const targetSentence = sentences[i % sentences.length];
-    
-    // Select distractor sentences from elsewhere in the same document
-    const distractor1 = sentences[(i + 1) % sentences.length];
-    const distractor2 = sentences[(i + 2) % sentences.length];
-    const distractor3 = sentences[(i + 3) % sentences.length];
+    const mainSentence = sentences[i % sentences.length];
+    const secondarySentence = sentences[(i + 1) % sentences.length];
+    const distractor1 = sentences[(i + 2) % sentences.length];
+    const distractor2 = sentences[(i + 3) % sentences.length];
 
-    const correctOption = targetSentence;
-    const optionB = distractor1 !== targetSentence ? distractor1 : `Inversion of the core premise stated in section ${i + 1}`;
-    const optionC = distractor2 !== targetSentence && distractor2 !== distractor1 ? distractor2 : `Alternative hypothesis not supported by the document analysis`;
-    const optionD = distractor3 !== targetSentence ? distractor3 : `Opposing structural condition contrary to text evidence`;
+    // Pick question pattern type (0: Statement-Based, 1: Assertion-Reason, 2: Analytical Logic)
+    const patternType = i % 3;
 
-    const rawOptions = [correctOption, optionB, optionC, optionD];
-    
-    // Deterministic shuffle
-    const options = [...rawOptions];
-    for (let j = options.length - 1; j > 0; j--) {
-      const k = (i + j) % (j + 1);
-      [options[j], options[k]] = [options[k], options[j]];
+    let questionText = '';
+    let options = [];
+    let correctOptionIndex = 0;
+
+    if (patternType === 0) {
+      // Statement-Based Question Format (UPSC Pattern)
+      questionText = `Consider the following statements regarding the subject matter:\n\n1. ${mainSentence}\n2. ${distractor1}\n\nWhich of the statements given above is/are correct?`;
+      options = [
+        '1 only',
+        '2 only',
+        'Both 1 and 2',
+        'Neither 1 nor 2'
+      ];
+      correctOptionIndex = 0; // Statement 1 is true based on text
+    } else if (patternType === 1) {
+      // Assertion-Reason Format (UPSC Pattern)
+      questionText = `Assertion (A): ${mainSentence}\nReason (R): ${secondarySentence !== mainSentence ? secondarySentence : 'This principle dictates the underlying operational framework.'}\n\nWhich one of the following options is correct?`;
+      options = [
+        'Both (A) and (R) are true, and (R) is the correct explanation of (A)',
+        'Both (A) and (R) are true, but (R) is NOT the correct explanation of (A)',
+        '(A) is true, but (R) is false',
+        '(A) is false, but (R) is true'
+      ];
+      correctOptionIndex = 0;
+    } else {
+      // Analytical Logic Format
+      questionText = `Which one of the following statements correctly evaluates the core principle of this subject?`;
+      const correctOpt = mainSentence;
+      const optB = distractor1 !== mainSentence ? distractor1 : 'The process functions independently of system parameters.';
+      const optC = distractor2 !== mainSentence ? distractor2 : 'Alternative hypothesis unsupported by analytical evidence.';
+      const optD = 'Opposing operational condition contrary to logical premise.';
+
+      const rawOpts = [correctOpt, optB, optC, optD];
+      options = [...rawOpts];
+      // Deterministic shuffle
+      for (let j = options.length - 1; j > 0; j--) {
+        const k = (i + j) % (j + 1);
+        [options[j], options[k]] = [options[k], options[j]];
+      }
+      correctOptionIndex = options.indexOf(correctOpt);
     }
-
-    const correctIdx = options.indexOf(correctOption);
-
-    // Extract key phrase for analytical question title
-    const topicExcerpt = targetSentence.substring(0, 70).replace(/[.,;:!?]$/, '');
 
     questions.push({
       id: i + 1,
-      question_text: `Based strictly on the uploaded text regarding "${topicExcerpt}...", which of the following statements is conceptually correct?`,
+      question_text: questionText,
       options,
-      correct_option_index: correctIdx >= 0 ? correctIdx : 0,
-      explanation: `Direct quote from uploaded document: "${targetSentence}"`
+      correct_option_index: correctOptionIndex >= 0 ? correctOptionIndex : 0,
+      explanation: `Verified statement from document: "${mainSentence}"`
     });
   }
 
   return {
-    quiz_title: 'Conceptual Document Analysis Quiz',
+    quiz_title: 'UPSC Academic Concept & Logic Quiz',
     questions
   };
 }
@@ -207,18 +231,19 @@ export async function generateQuizFromText(documentTextOrParams, questionCount =
       try {
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${finalApiKey}`;
 
-        const systemPrompt = `You are a Senior Academic Professor & Competitive Exam Specialist (UPSC / Higher Education standard).
-STRICT MANDATES FOR QUIZ GENERATION:
-1. STRICT DOCUMENT ADHERENCE: Generate questions EXCLUSIVELY based on the concepts, statements, facts, arguments, definitions, and relationships present in the provided document text.
-2. COMPREHENSIVE, ANALYTICAL & CONCEPTUAL FOCUS:
-   - Create deeply analytical, concept-testing questions requiring thorough comprehension.
-   - Test understanding of core mechanisms, cause-and-effect relationships, key definitions, and implications.
-   - NEVER generate generic trivia, random facts, or questions about PDF page numbers/metadata.
-3. HIGH-QUALITY OPTIONS & EXPLANATIONS:
-   - Every question MUST have exactly 4 plausible, academically rigorous, distinct choices directly tied to the document.
-   - Provide a clear, educational explanation citing the exact concept or paragraph from the document.`;
+        const systemPrompt = `You are a Senior UPSC CSE & Higher Education Test Examiner.
+STRICT EXAMINER MANDATES:
+1. STRICT DOCUMENT ADHERENCE: Generate questions 100% EXCLUSIVELY based on the facts, concepts, mechanisms, and arguments presented in the provided study document.
+2. NO META PREFIXES: NEVER use prefixes like "According to the document...", "Based on the uploaded text...", "In the provided file...". Ask questions directly as authentic, professional exam items.
+3. NO TRUNCATED SENTENCES OR DOTS: NEVER output partial sentences, truncated text, or ellipses ("..."). Every question sentence and option MUST be complete, grammatically sound, and fully written out.
+4. UPSC EXAMINER QUESTION PATTERNS (Vary the question types across the set):
+   - STATEMENT-BASED PATTERN: "Consider the following statements regarding [Concept]:\n1. [Statement I]\n2. [Statement II]\nWhich of the statements given above is/are correct?" (Options: "1 only", "2 only", "Both 1 and 2", "Neither 1 nor 2")
+   - ASSERTION-REASON PATTERN: "Assertion (A): [Premise]\nReason (R): [Explanation]\nWhich one of the following is correct?"
+   - FACTUAL & LOGICAL ANALYSIS PATTERN: "With reference to [Subject], which one of the following statements is correct?"
+5. HIGH-QUALITY OPTIONS & EXPLANATIONS:
+   - Provide exactly 4 clear, plausible, distinct options and an educational explanation citing the document.`;
 
-        const userPrompt = `Thoroughly analyze the following study document text and generate exactly ${count} ${diff}-level comprehensive, analytical multiple-choice questions:
+        const userPrompt = `Thoroughly analyze the following study document content and generate exactly ${count} ${diff}-level UPSC examiner style questions (mix Statement-Based, Assertion-Reason, and Analytical Logic patterns):
 
 STUDY DOCUMENT CONTENT:
 """

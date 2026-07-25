@@ -68,7 +68,7 @@ export function ResultAnalysis({ questions, userAnswers }) {
               {/* Accordion Content */}
               {isOpen && (
                 <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border-light)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                  <div className="result-options-grid">
                     {q.options.map((optText, optIdx) => {
                       const isUserChoice = selectedOption === optIdx;
                       const isCorrectChoice = q.correct_option_index === optIdx;
