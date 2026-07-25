@@ -51,19 +51,21 @@ export function StudentProfileModal({ studentName, studentEmail, onClose, onLogo
         </div>
 
         {/* Profile Info Details List */}
-        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-            <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.9rem' }}>
+            <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
               <Mail size={16} color="var(--primary-indigo)" /> Email Address
             </span>
-            <span style={{ fontWeight: 600 }}>{currentStudent.email}</span>
+            <span style={{ fontWeight: 700, wordBreak: 'break-all', fontSize: '0.88rem', color: 'var(--text-main)', paddingLeft: '1.5rem' }}>
+              {currentStudent.email}
+            </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.9rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-light)' }}>
             <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Calendar size={16} color="var(--accent-cyan)" /> Member Since
             </span>
-            <span style={{ fontWeight: 600 }}>{currentStudent.joinedDate}</span>
+            <span style={{ fontWeight: 700 }}>{currentStudent.joinedDate}</span>
           </div>
         </div>
 

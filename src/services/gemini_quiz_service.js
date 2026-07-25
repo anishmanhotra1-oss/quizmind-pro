@@ -98,52 +98,57 @@ export function generateSmartFallbackQuiz(documentText, count = 5, difficulty = 
     throw new Error('Not enough readable text in document to generate a quiz.');
   }
 
-  // Split into sentences
+  // Extract substantive sentences
   const sentences = clean
     .split(/(?<=[.!?])\s+/)
     .map(s => s.trim())
-    .filter(s => s.length > 25 && s.length < 250 && !/^(page|table|figure|http|www)/i.test(s));
+    .filter(s => s.length > 30 && s.length < 300 && !/^(page|table|figure|http|www|\d+$)/i.test(s));
+
+  if (sentences.length === 0) {
+    throw new Error('Could not find enough structured paragraphs in uploaded document.');
+  }
 
   const questions = [];
   const targetCount = Math.min(count, Math.max(3, sentences.length));
 
-  // Determine key terms from text
-  const words = clean.match(/\b[A-Z][a-z]{3,}\b/g) || ['Concept', 'Theory', 'Method', 'Principle', 'Process'];
-  const uniqueTerms = Array.from(new Set(words));
-
   for (let i = 0; i < targetCount; i++) {
-    const sentence = sentences[i % sentences.length];
+    const targetSentence = sentences[i % sentences.length];
     
-    // Pick key term or fragment from sentence
-    const sentWords = sentence.split(/\s+/);
-    const keySubject = sentWords.slice(0, 4).join(' ').replace(/^[a-z]/, c => c.toUpperCase());
+    // Select distractor sentences from elsewhere in the same document
+    const distractor1 = sentences[(i + 1) % sentences.length];
+    const distractor2 = sentences[(i + 2) % sentences.length];
+    const distractor3 = sentences[(i + 3) % sentences.length];
 
-    const questionText = `According to the uploaded material: "${sentence.substring(0, 90)}...", what is the main concept addressed?`;
-    
-    const correctOption = sentence.length > 80 ? sentence.substring(0, 75) + '...' : sentence;
-    
-    const distractors = [
-      `Alternative interpretation regarding ${uniqueTerms[(i + 1) % uniqueTerms.length] || 'systems'}`,
-      `Secondary factor involving ${uniqueTerms[(i + 2) % uniqueTerms.length] || 'methods'}`,
-      `Unrelated reference to ${uniqueTerms[(i + 3) % uniqueTerms.length] || 'procedures'}`
-    ];
+    const correctOption = targetSentence;
+    const optionB = distractor1 !== targetSentence ? distractor1 : `Inversion of the core premise stated in section ${i + 1}`;
+    const optionC = distractor2 !== targetSentence && distractor2 !== distractor1 ? distractor2 : `Alternative hypothesis not supported by the document analysis`;
+    const optionD = distractor3 !== targetSentence ? distractor3 : `Opposing structural condition contrary to text evidence`;
 
-    const options = [correctOption, ...distractors];
-    // Shuffle options reproducibly
-    const shuffledOptions = options.sort(() => (i % 2 === 0 ? 0.5 - Math.random() : Math.random() - 0.5));
-    const correctIdx = shuffledOptions.indexOf(correctOption);
+    const rawOptions = [correctOption, optionB, optionC, optionD];
+    
+    // Deterministic shuffle
+    const options = [...rawOptions];
+    for (let j = options.length - 1; j > 0; j--) {
+      const k = (i + j) % (j + 1);
+      [options[j], options[k]] = [options[k], options[j]];
+    }
+
+    const correctIdx = options.indexOf(correctOption);
+
+    // Extract key phrase for analytical question title
+    const topicExcerpt = targetSentence.substring(0, 70).replace(/[.,;:!?]$/, '');
 
     questions.push({
       id: i + 1,
-      question_text: `[Doc Reference Q${i + 1}] ${keySubject}: What statement best describes this concept from the document?`,
-      options: shuffledOptions,
+      question_text: `Based strictly on the uploaded text regarding "${topicExcerpt}...", which of the following statements is conceptually correct?`,
+      options,
       correct_option_index: correctIdx >= 0 ? correctIdx : 0,
-      explanation: `Extracted directly from text: "${sentence}"`
+      explanation: `Direct quote from uploaded document: "${targetSentence}"`
     });
   }
 
   return {
-    quiz_title: 'Document Study Quiz',
+    quiz_title: 'Conceptual Document Analysis Quiz',
     questions
   };
 }
@@ -202,17 +207,22 @@ export async function generateQuizFromText(documentTextOrParams, questionCount =
       try {
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${finalApiKey}`;
 
-        const systemPrompt = `You are an expert academic test creator.
-STRICT MANDATES:
-1. FOCUS EXCLUSIVELY on substantive concepts, definitions, and facts present in the provided study text.
-2. NEVER generate generic trivia or questions about document structural metadata.
-3. Every question must have exactly 4 options, 0-indexed correct option integer, and an explanation citing the text.`;
+        const systemPrompt = `You are a Senior Academic Professor & Competitive Exam Specialist (UPSC / Higher Education standard).
+STRICT MANDATES FOR QUIZ GENERATION:
+1. STRICT DOCUMENT ADHERENCE: Generate questions EXCLUSIVELY based on the concepts, statements, facts, arguments, definitions, and relationships present in the provided document text.
+2. COMPREHENSIVE, ANALYTICAL & CONCEPTUAL FOCUS:
+   - Create deeply analytical, concept-testing questions requiring thorough comprehension.
+   - Test understanding of core mechanisms, cause-and-effect relationships, key definitions, and implications.
+   - NEVER generate generic trivia, random facts, or questions about PDF page numbers/metadata.
+3. HIGH-QUALITY OPTIONS & EXPLANATIONS:
+   - Every question MUST have exactly 4 plausible, academically rigorous, distinct choices directly tied to the document.
+   - Provide a clear, educational explanation citing the exact concept or paragraph from the document.`;
 
-        const userPrompt = `Read the following document text carefully and generate exactly ${count} ${diff}-level multiple choice questions:
+        const userPrompt = `Thoroughly analyze the following study document text and generate exactly ${count} ${diff}-level comprehensive, analytical multiple-choice questions:
 
-DOCUMENT CONTENT:
+STUDY DOCUMENT CONTENT:
 """
-${cleanText.substring(0, 20000)}
+${cleanText.substring(0, 25000)}
 """`;
 
         const payload = {

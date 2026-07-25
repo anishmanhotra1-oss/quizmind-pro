@@ -24,6 +24,20 @@ export function CurrentAffairs({ onGenerateQuizFromArticle, onBackToDashboard })
   });
 
   const [copiedId, setCopiedId] = useState(null);
+  const [topBreakingArticles, setTopBreakingArticles] = useState([]);
+
+  // Fetch top breaking headlines for the ticker on mount
+  useEffect(() => {
+    const loadTickerHeadlines = async () => {
+      try {
+        const topData = await fetchCurrentAffairs({ category: 'all' });
+        setTopBreakingArticles(topData);
+      } catch (e) {
+        console.warn('Failed to load breaking ticker headlines:', e);
+      }
+    };
+    loadTickerHeadlines();
+  }, []);
 
   useEffect(() => {
     loadArticles();
@@ -39,6 +53,9 @@ export function CurrentAffairs({ onGenerateQuizFromArticle, onBackToDashboard })
     try {
       const data = await fetchCurrentAffairs({ category: activeCategory, searchQuery });
       setArticles(data);
+      if (topBreakingArticles.length === 0 && data.length > 0) {
+        setTopBreakingArticles(data);
+      }
     } catch (err) {
       console.error('Failed to load current affairs:', err);
     } finally {
@@ -187,28 +204,32 @@ export function CurrentAffairs({ onGenerateQuizFromArticle, onBackToDashboard })
         </div>
       </div>
 
-      {/* Breaking News Marquee Ticker */}
-      {articles.length > 0 && (
-        <div className="news-ticker-container">
-          <div className="news-ticker-badge">
-            <Radio size={13} />
-            Breaking News
-          </div>
-          <div className="news-ticker-scroll-area">
-            <div className="news-ticker-content">
-              {articles.slice(0, 6).concat(articles.slice(0, 6)).map((art, idx) => (
-                <span 
-                  key={`${art.id}-${idx}`} 
-                  onClick={() => setSelectedArticle(art)}
-                  style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)' }}
-                >
-                  <span style={{ color: '#ef4444', fontWeight: 800 }}>•</span> {art.title}
-                </span>
-              ))}
+      {/* Permanent Breaking News Marquee Ticker Across All Categories */}
+      {(() => {
+        const tickerItems = topBreakingArticles.length > 0 ? topBreakingArticles : articles;
+        if (tickerItems.length === 0) return null;
+        return (
+          <div className="news-ticker-container">
+            <div className="news-ticker-badge">
+              <Radio size={13} />
+              Breaking News
+            </div>
+            <div className="news-ticker-scroll-area">
+              <div className="news-ticker-content">
+                {tickerItems.slice(0, 8).concat(tickerItems.slice(0, 8)).map((art, idx) => (
+                  <span 
+                    key={`${art.id}-${idx}`} 
+                    onClick={() => setSelectedArticle(art)}
+                    style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)' }}
+                  >
+                    <span style={{ color: '#ef4444', fontWeight: 800 }}>•</span> {art.title}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Search & Vibrant Category Filter Bar */}
       <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', borderRadius: 'var(--radius-xl)' }}>

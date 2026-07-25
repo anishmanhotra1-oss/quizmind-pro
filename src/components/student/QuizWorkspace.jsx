@@ -94,7 +94,7 @@ export function QuizWorkspace({ quiz, questions, studentName, onQuizCompleted, o
       />
 
       {/* Bottom Navigation Toolbar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
+      <div className="quiz-bottom-nav">
         <button
           className="btn btn-secondary"
           onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
@@ -104,7 +104,7 @@ export function QuizWorkspace({ quiz, questions, studentName, onQuizCompleted, o
         </button>
 
         {/* Question Pips */}
-        <div style={{ display: 'flex', gap: '6px' }}>
+        <div className="quiz-pips-container">
           {questions.map((_, idx) => {
             const isAnswered = answers[idx] !== undefined;
             const isCurrent = idx === currentIndex;
@@ -136,16 +136,17 @@ export function QuizWorkspace({ quiz, questions, studentName, onQuizCompleted, o
             className="btn btn-primary"
             onClick={() => setCurrentIndex(prev => Math.min(totalQuestions - 1, prev + 1))}
           >
-            Next Question <ArrowRight size={16} />
+            Next <ArrowRight size={16} />
           </button>
         ) : (
           <button
             className="btn btn-emerald"
             onClick={calculateAndSubmit}
             disabled={isSubmitting}
+            style={{ fontWeight: 800 }}
           >
             <Send size={16} />
-            {isSubmitting ? 'Submitting...' : 'Submit Final Answers'}
+            {isSubmitting ? 'Submitting...' : 'Submit Answers'}
           </button>
         )}
       </div>

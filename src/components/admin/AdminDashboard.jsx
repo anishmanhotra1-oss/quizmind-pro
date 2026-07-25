@@ -435,7 +435,7 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
             </p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1.5rem' }}>
+          <div className="active-quizzes-grid">
             {quizzes.map(quiz => (
               <ActiveQuizCard 
                 key={quiz.id} 
@@ -454,13 +454,14 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
           <h2>Registered Students Directory ({students.length})</h2>
         </div>
 
-        <div className="glass-panel" style={{ padding: '1.5rem' }}>
+        <div className="glass-panel" style={{ padding: '1.25rem' }}>
           {students.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
               No students registered yet. Student profiles automatically appear here upon registration!
             </div>
           ) : (
-            <table className="leaderboard-table">
+            <div className="table-responsive-wrapper">
+              <table className="leaderboard-table">
               <thead>
                 <tr>
                   <th>Student Name</th>
@@ -512,6 +513,7 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

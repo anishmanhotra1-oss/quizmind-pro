@@ -186,17 +186,22 @@ app.post('/api/quizzes/generate', async (req, res) => {
     try {
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeApiKey}`;
 
-      const systemPrompt = `You are an expert academic test creator.
-STRICT MANDATES:
-1. FOCUS EXCLUSIVELY on substantive subject matter concepts, definitions, and facts from the provided study text.
-2. NEVER generate questions about PDF metadata, page numbers, table of contents, or structural tags.
-3. Provide exactly 4 unique multiple choice options, a 0-indexed correct index integer, and a clear educational explanation for each question.`;
+      const systemPrompt = `You are a Senior Academic Professor & Competitive Exam Specialist (UPSC / Higher Education standard).
+STRICT MANDATES FOR QUIZ GENERATION:
+1. STRICT DOCUMENT ADHERENCE: Generate questions EXCLUSIVELY based on the concepts, statements, facts, arguments, definitions, and relationships present in the provided document text.
+2. COMPREHENSIVE, ANALYTICAL & CONCEPTUAL FOCUS:
+   - Create deeply analytical, concept-testing questions requiring thorough comprehension.
+   - Test understanding of core mechanisms, cause-and-effect relationships, key definitions, and contextual implications.
+   - NEVER generate generic trivia, random facts, or questions about PDF page numbers/metadata.
+3. HIGH-QUALITY OPTIONS & EXPLANATIONS:
+   - Every question MUST have exactly 4 plausible, academically rigorous, distinct choices directly tied to the document.
+   - Provide a clear, educational explanation citing the exact concept or paragraph from the document.`;
 
-      const userPrompt = `Read the following educational text carefully and generate exactly ${numQuestions} ${difficulty}-level multiple choice questions:
+      const userPrompt = `Thoroughly analyze the following study document text and generate exactly ${numQuestions} ${difficulty}-level comprehensive, analytical multiple-choice questions:
 
-EDUCATIONAL TEXT:
+STUDY DOCUMENT CONTENT:
 """
-${cleanText.substring(0, 20000)}
+${cleanText.substring(0, 25000)}
 """`;
 
       const payload = {

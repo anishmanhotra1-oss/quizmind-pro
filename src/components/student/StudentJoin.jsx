@@ -153,40 +153,58 @@ export function StudentJoin({ onStartQuiz, defaultStudentName }) {
           </button>
         </form>
 
-        {/* Minimal Available Access Codes Pills Bar */}
+        {/* Available Access Codes Mobile-Responsive Section */}
         {availableQuizzes.length > 0 && (
           <div style={{ marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-light)' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              📢 Available Access Codes:
+            <span style={{ fontSize: '0.82rem', color: 'var(--primary-indigo)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              📢 Active Classroom Quiz Codes ({availableQuizzes.length}):
             </span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               {availableQuizzes.map(quiz => (
-                <button
+                <div
                   key={quiz.id}
-                  type="button"
                   onClick={() => {
                     setAccessCode(quiz.access_code);
                     handleJoinWithCode(quiz.access_code);
                   }}
                   style={{
-                    background: accessCode === quiz.access_code ? 'linear-gradient(135deg, var(--primary-indigo), var(--primary-violet-dark))' : 'rgba(99, 102, 241, 0.12)',
-                    border: '1px solid var(--border-indigo)',
-                    color: accessCode === quiz.access_code ? '#ffffff' : 'var(--primary-indigo)',
-                    padding: '0.4rem 0.85rem',
-                    borderRadius: '20px',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
+                    background: accessCode === quiz.access_code ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(124, 58, 237, 0.25))' : 'var(--bg-card)',
+                    border: accessCode === quiz.access_code ? '1.5px solid var(--primary-indigo)' : '1px solid var(--border-light)',
+                    padding: '0.85rem 1.1rem',
+                    borderRadius: '14px',
                     cursor: 'pointer',
-                    display: 'inline-flex',
+                    display: 'flex',
                     alignItems: 'center',
-                    gap: '0.4rem',
-                    transition: 'var(--transition-fast)'
+                    justifyContent: 'space-between',
+                    gap: '0.75rem',
+                    transition: 'var(--transition-fast)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                   }}
-                  title={`Click to attempt ${quiz.title}`}
                 >
-                  <span style={{ fontFamily: 'monospace' }}>{quiz.access_code}</span>
-                  <span style={{ opacity: 0.8, fontSize: '0.78rem', fontWeight: 500 }}>({quiz.title})</span>
-                </button>
+                  <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {quiz.title}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {quiz.questions ? quiz.questions.length : 5} Questions • Tap to Enter
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: 'linear-gradient(135deg, var(--primary-indigo), #7c3aed)',
+                    color: '#ffffff',
+                    padding: '0.4rem 0.85rem',
+                    borderRadius: '10px',
+                    fontFamily: 'monospace',
+                    fontSize: '1rem',
+                    fontWeight: 800,
+                    letterSpacing: '1px',
+                    boxShadow: '0 0 12px rgba(99, 102, 241, 0.4)',
+                    flexShrink: 0
+                  }}>
+                    {quiz.access_code}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
