@@ -218,6 +218,18 @@ ENSO is a periodic fluctuation in sea surface temperatures (SST) and atmospheric
   }
 ];
 
+export async function fetchLiveUPSCNotes() {
+  try {
+    const res = await fetch('/api/notes');
+    if (res.ok) {
+      const serverNotes = await res.json();
+      localStorage.setItem('QUIZMIND_UPSC_NOTES', JSON.stringify(serverNotes));
+      return serverNotes;
+    }
+  } catch (e) {}
+  return getUPSCNotes();
+}
+
 export function getUPSCNotes() {
   const saved = localStorage.getItem('QUIZMIND_UPSC_NOTES');
   if (saved) {
@@ -234,7 +246,7 @@ export function saveUPSCNotes(notesList) {
   localStorage.setItem('QUIZMIND_UPSC_NOTES', JSON.stringify(notesList));
 }
 
-export function addUPSCNote(newNoteData) {
+export async function addUPSCNote(newNoteData) {
   const currentNotes = getUPSCNotes();
   const subObj = UPSC_SUBJECTS.find(s => s.id === newNoteData.subject) || {};
 
@@ -252,18 +264,48 @@ export function addUPSCNote(newNoteData) {
 
   const updated = [newNote, ...currentNotes];
   saveUPSCNotes(updated);
+
+  try {
+    const res = await fetch('/api/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newNote)
+    });
+    if (res.ok) {
+      const serverNote = await res.json();
+      return serverNote;
+    }
+  } catch (e) {}
+
   return newNote;
 }
 
-export function deleteUPSCNote(noteId) {
+export async function deleteUPSCNote(noteId) {
   const currentNotes = getUPSCNotes();
   const updated = currentNotes.filter(n => n.id !== noteId);
   saveUPSCNotes(updated);
+
+  try {
+    await fetch(`/api/notes/${noteId}`, { method: 'DELETE' });
+  } catch (e) {}
+
   return updated;
 }
 
 // Notes Document Attachments Storage & Management
 const STORAGE_KEY_NOTES_DOCS = 'QUIZMIND_NOTES_DOCUMENTS';
+
+export async function fetchLiveNotesDocuments() {
+  try {
+    const res = await fetch('/api/notes/documents');
+    if (res.ok) {
+      const serverDocs = await res.json();
+      localStorage.setItem(STORAGE_KEY_NOTES_DOCS, JSON.stringify(serverDocs));
+      return serverDocs;
+    }
+  } catch (e) {}
+  return getNotesDocuments();
+}
 
 export function getNotesDocuments() {
   const saved = localStorage.getItem(STORAGE_KEY_NOTES_DOCS);
@@ -294,7 +336,7 @@ export function getNotesDocuments() {
   ];
 }
 
-export function addNotesDocument(doc) {
+export async function addNotesDocument(doc) {
   const current = getNotesDocuments();
   const newDoc = {
     id: 'notes-doc-' + Date.now(),
@@ -304,17 +346,37 @@ export function addNotesDocument(doc) {
     fileSize: doc.fileSize || '1.5 MB',
     uploadDate: new Date().toISOString().split('T')[0],
     fileData: doc.fileData || '',
+    fileName: doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'pdf'}`,
     uploadedBy: doc.uploadedBy || 'Admin Panel'
   };
   const updated = [newDoc, ...current];
   localStorage.setItem(STORAGE_KEY_NOTES_DOCS, JSON.stringify(updated));
+
+  try {
+    const res = await fetch('/api/notes/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newDoc)
+    });
+    if (res.ok) {
+      const serverDoc = await res.json();
+      return serverDoc;
+    }
+  } catch (e) {}
+
   return newDoc;
 }
 
-export function deleteNotesDocument(docId) {
+export async function deleteNotesDocument(docId) {
   const current = getNotesDocuments();
   const updated = current.filter(d => d.id !== docId);
   localStorage.setItem(STORAGE_KEY_NOTES_DOCS, JSON.stringify(updated));
+
+  try {
+    await fetch(`/api/notes/documents/${docId}`, { method: 'DELETE' });
+  } catch (e) {}
+
   return updated;
 }
+
 

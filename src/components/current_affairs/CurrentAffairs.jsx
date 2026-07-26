@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { 
   CATEGORIES, fetchCurrentAffairs, addCustomCurrentAffairs, deleteCustomCurrentAffairs,
-  getCADocuments, addCADocument, deleteCADocument 
+  getCADocuments, addCADocument, deleteCADocument, fetchLiveCADocuments, fetchLiveCustomCurrentAffairs 
 } from '../../services/current_affairs_service';
 import { FormattedContentRenderer } from '../common/FormattedContentRenderer';
 
@@ -50,37 +50,28 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
   const [showAddArticleModal, setShowAddArticleModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('national');
-  const [newSource, setNewSource] = useState('Admin Editorial / PIB');
+  const [newSource, setNewSource] = useState('PIB Delhi / Editorial');
   const [newSummary, setNewSummary] = useState('');
   const [newContent, setNewContent] = useState('');
 
-  // Fetch top breaking headlines on mount
-  useEffect(() => {
-    const loadTickerHeadlines = async () => {
-      try {
-        const topData = await fetchCurrentAffairs({ category: 'all' });
-        setTopBreakingArticles(topData);
-      } catch (e) {
-        console.warn('Failed to load breaking ticker headlines:', e);
-      }
-    };
-    loadTickerHeadlines();
-    loadDocuments();
-  }, []);
-
   useEffect(() => {
     loadArticles();
-    const interval = setInterval(() => {
+    loadDocuments();
+
+    // Auto-update every 3 seconds for live multi-device sync
+    const pollInterval = setInterval(() => {
       loadArticles(true);
-    }, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [activeCategory, searchQuery]);
+      loadDocuments();
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [activeCategory]);
 
   const loadArticles = async (silent = false) => {
     if (!silent) setLoading(true);
     setIsRefreshing(true);
     try {
-      const data = await fetchCurrentAffairs({ category: activeCategory, searchQuery });
+      const data = await fetchLiveCustomCurrentAffairs({ category: activeCategory, searchQuery });
       setArticles(data);
       if (topBreakingArticles.length === 0 && data.length > 0) {
         setTopBreakingArticles(data);
@@ -93,12 +84,18 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
     }
   };
 
-  const loadDocuments = () => {
-    setDocuments(getCADocuments());
+  const loadDocuments = async () => {
+    const docs = await fetchLiveCADocuments();
+    setDocuments(docs || []);
   };
 
-  const handleManualRefresh = () => {
-    loadArticles();
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetch('/api/current-affairs/rss-refresh', { method: 'POST' });
+    } catch (e) {}
+    await loadArticles();
+    setIsRefreshing(false);
   };
 
   const toggleBookmark = (articleId) => {
@@ -120,14 +117,14 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
     }
   };
 
-  const handleCreateArticle = (e) => {
+  const handleCreateArticle = async (e) => {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim()) {
       alert('Please fill out the article title and content.');
       return;
     }
 
-    addCustomCurrentAffairs({
+    await addCustomCurrentAffairs({
       title: newTitle.trim(),
       category: newCategory,
       source: newSource.trim(),
@@ -139,13 +136,13 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
     setNewSummary('');
     setNewContent('');
     setShowAddArticleModal(false);
-    loadArticles();
+    await loadArticles();
   };
 
-  const handleDeleteArticle = (e, articleId) => {
+  const handleDeleteArticle = async (e, articleId) => {
     e.stopPropagation();
     if (window.confirm('Delete this published current affairs article?')) {
-      const updated = deleteCustomCurrentAffairs(articleId);
+      const updated = await deleteCustomCurrentAffairs(articleId);
       setArticles(updated);
       if (selectedArticle && selectedArticle.id === articleId) setSelectedArticle(null);
     }
@@ -184,7 +181,7 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
     reader.readAsDataURL(file);
   };
 
-  const handleAddDocument = (e) => {
+  const handleAddDocument = async (e) => {
     e.preventDefault();
     if (!docTitle.trim()) {
       alert('Please enter or select a document file.');
@@ -195,7 +192,7 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
       return;
     }
 
-    addCADocument({
+    await addCADocument({
       title: docTitle.trim(),
       category: docCategory,
       fileType: docFileType || 'pdf',
@@ -212,13 +209,13 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
     setSelectedFileName('');
     setSelectedFileSize('');
     setShowDocUploadModal(false);
-    loadDocuments();
+    await loadDocuments();
   };
 
-  const handleDeleteDoc = (e, docId) => {
+  const handleDeleteDoc = async (e, docId) => {
     e.stopPropagation();
     if (window.confirm('Delete this attached document?')) {
-      const updated = deleteCADocument(docId);
+      const updated = await deleteCADocument(docId);
       setDocuments(updated);
     }
   };

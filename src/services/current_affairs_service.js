@@ -1,4 +1,4 @@
-// QuizMind Pro - Daily Current Affairs Service (Live RSS + Admin Published Articles)
+// QuizMind Pro - Daily Current Affairs Service (Live RSS + Admin Published Articles + Server Sync)
 
 export const CATEGORIES = [
   { id: 'all', label: 'All Headlines', icon: 'Globe' },
@@ -32,7 +32,6 @@ const INITIAL_CUSTOM_AFFAIRS = [
 - **Goal**: Develop intermediate scale quantum computers with 50-1000 physical qubits in 8 years.
 - **Impact on UPSC GS III**: Crucial topic for Science & Technology, IPR, and National Innovation Ecosystem.`
   },
-
   {
     id: 'ca-custom-2',
     title: 'RBI Framework for Climate Risk and Sustainable Finance 2026',
@@ -53,42 +52,28 @@ const INITIAL_CUSTOM_AFFAIRS = [
 - **Climate Stress Testing**: Banks must evaluate portfolio exposure to physical and transition climate risks.
 - **Green Deposits Framework**: Promoting allocation of capital towards renewable energy, climate adaptation, and green building projects.
 - **UPSC Relevance**: GS Paper III Economy & Environmental Economics.`
-  },
-
-  {
-    id: 'ca-custom-3',
-    title: 'India Hosts Global Artificial Intelligence Safety Summit in New Delhi',
-    category: 'international',
-    categoryName: 'International',
-    source: 'Ministry of External Affairs',
-    date: new Date().toISOString().split('T')[0],
-    readTime: '3 min read',
-    summary: 'Global delegates convene to establish ethical AI governance protocols, data sovereignty frameworks, and open-source AI infrastructure for developing nations.',
-    highlights: [
-      'Focus on Global South inclusive AI governance protocols.',
-      'Establishment of the International AI Trust & Verification Centre.',
-      'Strategic relevance for UPSC GS II International Relations & Tech Diplomacy.'
-    ],
-    content: `India hosted the Global AI Safety & Trust Summit bringing together tech leaders, policymakers, and ethicists.
-
-### Key Takeaways:
-- **Global South Focus**: Democratizing access to high-performance computing resources.
-- **AI Safety Declarations**: Voluntary alignment on synthetic media watermarking and deepfake mitigation.`
   }
 ];
 
-// Local storage keys
 const STORAGE_KEY_CUSTOM = 'QUIZMIND_CUSTOM_AFFAIRS';
 const STORAGE_KEY_DOCS = 'QUIZMIND_CA_DOCUMENTS';
+
+export async function fetchLiveCustomCurrentAffairs() {
+  try {
+    const res = await fetch('/api/current-affairs');
+    if (res.ok) {
+      const serverList = await res.json();
+      localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(serverList));
+      return serverList;
+    }
+  } catch (e) {}
+  return getCustomCurrentAffairs();
+}
 
 export function getCustomCurrentAffairs() {
   const saved = localStorage.getItem(STORAGE_KEY_CUSTOM);
   if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      console.error('Error reading custom current affairs:', e);
-    }
+    try { return JSON.parse(saved); } catch (e) {}
   }
   return INITIAL_CUSTOM_AFFAIRS;
 }
@@ -97,7 +82,7 @@ export function saveCustomCurrentAffairs(list) {
   localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(list));
 }
 
-export function addCustomCurrentAffairs(articleData) {
+export async function addCustomCurrentAffairs(articleData) {
   const currentList = getCustomCurrentAffairs();
   const categoryNames = {
     all: 'General News',
@@ -112,7 +97,6 @@ export function addCustomCurrentAffairs(articleData) {
   const wordCount = articleData.content ? articleData.content.split(/\s+/).length : 150;
   const readTimeCalc = `${Math.max(2, Math.ceil(wordCount / 150))} min read`;
 
-  // Auto generate highlights if not provided
   let highlights = articleData.highlights;
   if (!highlights || !Array.isArray(highlights) || highlights.length === 0) {
     highlights = articleData.content
@@ -142,17 +126,47 @@ export function addCustomCurrentAffairs(articleData) {
 
   const updated = [newArticle, ...currentList];
   saveCustomCurrentAffairs(updated);
+
+  try {
+    const res = await fetch('/api/current-affairs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newArticle)
+    });
+    if (res.ok) {
+      const serverArticle = await res.json();
+      return serverArticle;
+    }
+  } catch (e) {}
+
   return newArticle;
 }
 
-export function deleteCustomCurrentAffairs(articleId) {
+export async function deleteCustomCurrentAffairs(articleId) {
   const currentList = getCustomCurrentAffairs();
   const updated = currentList.filter(item => item.id !== articleId);
   saveCustomCurrentAffairs(updated);
+
+  try {
+    await fetch(`/api/current-affairs/${articleId}`, { method: 'DELETE' });
+  } catch (e) {}
+
   return updated;
 }
 
-// Current Affairs Document Attachments
+// Current Affairs Document Attachments Sync
+export async function fetchLiveCADocuments() {
+  try {
+    const res = await fetch('/api/current-affairs/documents');
+    if (res.ok) {
+      const serverDocs = await res.json();
+      localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(serverDocs));
+      return serverDocs;
+    }
+  } catch (e) {}
+  return getCADocuments();
+}
+
 export function getCADocuments() {
   const saved = localStorage.getItem(STORAGE_KEY_DOCS);
   if (saved) {
@@ -166,65 +180,58 @@ export function getCADocuments() {
       fileType: 'pdf',
       fileSize: '2.4 MB',
       uploadDate: new Date().toISOString().split('T')[0],
-      downloadUrl: '#',
       fileData: 'DATA_EMBEDDED',
       uploadedBy: 'Admin Panel'
-    },
-    {
-      id: 'ca-doc-2',
-      title: 'PIB Monthly Current Affairs Dossier - Environment & Science',
-      category: 'environment',
-      fileType: 'pdf',
-      fileSize: '3.1 MB',
-      uploadDate: new Date().toISOString().split('T')[0],
-      downloadUrl: '#',
-      fileData: 'DATA_EMBEDDED',
-      uploadedBy: 'UPSC Faculty'
     }
   ];
 }
 
-export function addCADocument(doc) {
+export async function addCADocument(doc) {
   const current = getCADocuments();
   const newDoc = {
     id: 'ca-doc-' + Date.now(),
     title: doc.title,
     category: doc.category || 'all',
     fileType: doc.fileType || 'pdf',
-    fileSize: doc.fileSize || '1.2 MB',
+    fileSize: doc.fileSize || '1.5 MB',
     uploadDate: new Date().toISOString().split('T')[0],
     fileData: doc.fileData || '',
-    downloadUrl: doc.downloadUrl || '#',
+    fileName: doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'pdf'}`,
     uploadedBy: doc.uploadedBy || 'Admin'
   };
   const updated = [newDoc, ...current];
   localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(updated));
+
+  try {
+    const res = await fetch('/api/current-affairs/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newDoc)
+    });
+    if (res.ok) {
+      const serverDoc = await res.json();
+      return serverDoc;
+    }
+  } catch (e) {}
+
   return newDoc;
 }
 
-export function deleteCADocument(docId) {
+export async function deleteCADocument(docId) {
   const current = getCADocuments();
   const updated = current.filter(d => d.id !== docId);
   localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(updated));
+
+  try {
+    await fetch(`/api/current-affairs/documents/${docId}`, { method: 'DELETE' });
+  } catch (e) {}
+
   return updated;
 }
 
 export async function fetchCurrentAffairs({ category = 'all', searchQuery = '' } = {}) {
-  const customItems = getCustomCurrentAffairs();
-  
-  // Try fetching live RSS news from backend endpoint
-  let liveItems = [];
-  try {
-    const res = await fetch(`/api/current-affairs?category=${category}&search=${encodeURIComponent(searchQuery)}`);
-    if (res.ok) {
-      liveItems = await res.json();
-    }
-  } catch (e) {
-    // Fall back smoothly if backend endpoint unavailable
-  }
-
-  // Ensure all items have safe highlights & readTime
-  let merged = [...customItems, ...liveItems].map(item => {
+  const customItems = await fetchLiveCustomCurrentAffairs();
+  let merged = [...customItems].map(item => {
     const wordCount = item.content ? item.content.split(/\s+/).length : 150;
     const readTimeCalc = item.readTime || `${Math.max(2, Math.ceil(wordCount / 150))} min read`;
     
@@ -244,12 +251,10 @@ export async function fetchCurrentAffairs({ category = 'all', searchQuery = '' }
     };
   });
 
-  // Apply Category Filter
   if (category && category !== 'all') {
     merged = merged.filter(item => item.category === category);
   }
 
-  // Apply Search Filter
   if (searchQuery.trim()) {
     const q = searchQuery.toLowerCase();
     merged = merged.filter(item => 
@@ -261,4 +266,3 @@ export async function fetchCurrentAffairs({ category = 'all', searchQuery = '' }
 
   return merged;
 }
-

@@ -5,7 +5,8 @@ import {
 } from 'lucide-react';
 import { 
   getUPSCNotes, addUPSCNote, deleteUPSCNote, UPSC_SUBJECTS,
-  getNotesDocuments, addNotesDocument, deleteNotesDocument 
+  getNotesDocuments, addNotesDocument, deleteNotesDocument,
+  fetchLiveUPSCNotes, fetchLiveNotesDocuments
 } from '../../services/notes_service';
 import { FormattedContentRenderer } from '../common/FormattedContentRenderer';
 
@@ -40,28 +41,37 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
   const [selectedFileName, setSelectedFileName] = useState('');
   const [selectedFileSize, setSelectedFileSize] = useState('');
 
+  const loadNotes = async () => {
+    const list = await fetchLiveUPSCNotes();
+    setNotes(list || []);
+  };
+
+  const loadDocuments = async () => {
+    const list = await fetchLiveNotesDocuments();
+    setDocuments(list || []);
+  };
+
   useEffect(() => {
     loadNotes();
     loadDocuments();
+
+    // Auto refresh every 3 seconds for live multi-device note & document sync
+    const pollInterval = setInterval(() => {
+      loadNotes();
+      loadDocuments();
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
-  const loadNotes = () => {
-    const list = getUPSCNotes();
-    setNotes(list);
-  };
-
-  const loadDocuments = () => {
-    setDocuments(getNotesDocuments());
-  };
-
-  const handleCreateNote = (e) => {
+  const handleCreateNote = async (e) => {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim()) {
       alert('Please fill out the note title and content.');
       return;
     }
 
-    addUPSCNote({
+    await addUPSCNote({
       title: newTitle.trim(),
       subject: newSubject,
       summary: newSummary.trim(),
@@ -73,13 +83,13 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
     setNewSummary('');
     setNewContent('');
     setShowUploadModal(false);
-    loadNotes();
+    await loadNotes();
   };
 
-  const handleDeleteNote = (e, noteId) => {
+  const handleDeleteNote = async (e, noteId) => {
     e.stopPropagation();
     if (window.confirm('Are you sure you want to delete this UPSC note?')) {
-      const updated = deleteUPSCNote(noteId);
+      const updated = await deleteUPSCNote(noteId);
       setNotes(updated);
       if (activeNote && activeNote.id === noteId) setActiveNote(null);
     }
@@ -118,7 +128,7 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
     reader.readAsDataURL(file);
   };
 
-  const handleCreateDocument = (e) => {
+  const handleCreateDocument = async (e) => {
     e.preventDefault();
     if (!docTitle.trim()) {
       alert('Please enter or select a document file.');
@@ -129,7 +139,7 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
       return;
     }
 
-    addNotesDocument({
+    await addNotesDocument({
       title: docTitle.trim(),
       subject: docSubject,
       fileType: docFileType || 'pdf',
@@ -146,13 +156,13 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
     setSelectedFileName('');
     setSelectedFileSize('');
     setShowDocUploadModal(false);
-    loadDocuments();
+    await loadDocuments();
   };
 
-  const handleDeleteDoc = (e, docId) => {
+  const handleDeleteDoc = async (e, docId) => {
     e.stopPropagation();
     if (window.confirm('Delete this study document file?')) {
-      const updated = deleteNotesDocument(docId);
+      const updated = await deleteNotesDocument(docId);
       setDocuments(updated);
     }
   };

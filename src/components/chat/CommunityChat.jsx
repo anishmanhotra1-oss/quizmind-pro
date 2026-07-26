@@ -12,9 +12,10 @@ export function CommunityChat({ userRole, studentName, onBackToDashboard }) {
 
   useEffect(() => {
     fetchMessages();
+    // Fast 2-second real-time global server sync polling across all devices
     const interval = setInterval(() => {
       fetchMessages(true);
-    }, 4000);
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -33,6 +34,9 @@ export function CommunityChat({ userRole, studentName, onBackToDashboard }) {
       if (res.ok) {
         const data = await res.json();
         setMessages(data);
+        try {
+          localStorage.setItem('QUIZMIND_LOCAL_CHAT', JSON.stringify(data));
+        } catch (err) {}
       } else {
         fallbackLocalMessages();
       }
@@ -84,12 +88,9 @@ export function CommunityChat({ userRole, studentName, onBackToDashboard }) {
     // Optimistic UI Update
     const updatedMessages = [...messages, newMsgObj];
     setMessages(updatedMessages);
-    try {
-      localStorage.setItem('QUIZMIND_LOCAL_CHAT', JSON.stringify(updatedMessages));
-    } catch (err) {}
 
     try {
-      await fetch('/api/chat/messages', {
+      const res = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,6 +99,9 @@ export function CommunityChat({ userRole, studentName, onBackToDashboard }) {
           messageText: msgText
         })
       });
+      if (res.ok) {
+        await fetchMessages(true);
+      }
     } catch (e) {
       console.warn('Backend server chat API unavailable, saved locally.');
     } finally {
@@ -161,10 +165,13 @@ export function CommunityChat({ userRole, studentName, onBackToDashboard }) {
           justify: 'space-between',
           alignItems: 'center'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 10px #34d399' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 10px #34d399', animation: 'pulse 1.5s infinite' }} />
             <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>
               Live Doubts Room • Active as <strong style={{ color: 'var(--primary-indigo)' }}>{currentUser}</strong>
+            </span>
+            <span style={{ background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.35)', padding: '2px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 800 }}>
+              ⚡ Global Server Sync (2s)
             </span>
           </div>
 

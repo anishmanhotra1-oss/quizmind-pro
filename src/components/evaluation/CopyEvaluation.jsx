@@ -466,6 +466,9 @@ ${evaluationResult.actionableRoadmap.map(r => `- ${r}`).join('\n')}`;
                 <h3 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: '#f472b6' }}>
                   {evaluationResult.score} / {evaluationResult.maxMarks} <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>Marks Awarded</span>
                 </h3>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  📌 <em>Strict UPSC Mains Standard: 55%–65% represents Top 1% Ranker performance. 10/10 is never awarded.</em>
+                </div>
               </div>
 
               <button className="btn btn-secondary" onClick={handleDownloadReport} style={{ fontSize: '0.85rem', padding: '0.55rem 1rem' }}>
