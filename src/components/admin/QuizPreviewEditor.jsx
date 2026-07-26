@@ -44,6 +44,19 @@ export function QuizPreviewEditor({ initialQuiz, onPublish, onClose, isPublishin
     });
   };
 
+  const handleAddQuestion = () => {
+    setQuestions([
+      ...questions,
+      {
+        id: questions.length + 1,
+        question_text: 'Enter your new custom question here...',
+        options: ['Option A', 'Option B', 'Option C', 'Option D'],
+        correct_option_index: 0,
+        explanation: 'Detailed concept explanation for this question.'
+      }
+    ]);
+  };
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div 
@@ -56,9 +69,19 @@ export function QuizPreviewEditor({ initialQuiz, onPublish, onClose, isPublishin
             <Eye size={24} color="var(--primary-violet)" />
             <h3>Preview & Edit AI Questions</h3>
           </div>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            {questions.length} Generated Questions
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleAddQuestion}
+              style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+            >
+              + Add Question
+            </button>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              {questions.length} Questions
+            </span>
+          </div>
         </div>
 
         <div className="input-group">

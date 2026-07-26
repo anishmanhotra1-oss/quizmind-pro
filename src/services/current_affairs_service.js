@@ -142,13 +142,19 @@ export async function addCustomCurrentAffairs(articleData) {
   return newArticle;
 }
 
-export async function deleteCustomCurrentAffairs(articleId) {
+export async function deleteCustomCurrentAffairs(articleId, userRole = 'student') {
+  if (userRole !== 'admin') {
+    return getCustomCurrentAffairs();
+  }
   const currentList = getCustomCurrentAffairs();
   const updated = currentList.filter(item => item.id !== articleId);
   saveCustomCurrentAffairs(updated);
 
   try {
-    await fetch(`/api/current-affairs/${articleId}`, { method: 'DELETE' });
+    await fetch(`/api/current-affairs/${articleId}`, {
+      method: 'DELETE',
+      headers: { 'x-user-role': userRole }
+    });
   } catch (e) {}
 
   return updated;
@@ -160,8 +166,21 @@ export async function fetchLiveCADocuments() {
     const res = await fetch('/api/current-affairs/documents');
     if (res.ok) {
       const serverDocs = await res.json();
-      localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(serverDocs));
-      return serverDocs;
+      const localDocs = getCADocuments();
+      const docMap = new Map();
+      if (Array.isArray(serverDocs)) {
+        serverDocs.forEach(d => docMap.set(d.id, d));
+      }
+      if (Array.isArray(localDocs)) {
+        localDocs.forEach(d => {
+          if (!docMap.has(d.id)) {
+            docMap.set(d.id, d);
+          }
+        });
+      }
+      const mergedDocs = Array.from(docMap.values());
+      localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(mergedDocs));
+      return mergedDocs;
     }
   } catch (e) {}
   return getCADocuments();
@@ -217,13 +236,19 @@ export async function addCADocument(doc) {
   return newDoc;
 }
 
-export async function deleteCADocument(docId) {
+export async function deleteCADocument(docId, userRole = 'student') {
+  if (userRole !== 'admin') {
+    return getCADocuments();
+  }
   const current = getCADocuments();
   const updated = current.filter(d => d.id !== docId);
   localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(updated));
 
   try {
-    await fetch(`/api/current-affairs/documents/${docId}`, { method: 'DELETE' });
+    await fetch(`/api/current-affairs/documents/${docId}`, {
+      method: 'DELETE',
+      headers: { 'x-user-role': userRole }
+    });
   } catch (e) {}
 
   return updated;

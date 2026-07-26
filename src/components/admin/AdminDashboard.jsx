@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Sparkles, Layers, ShieldCheck, Wifi, Copy, Check, Users, User, Mail, Calendar, Award, BookOpen, FileText, Trash2, X, Newspaper } from 'lucide-react';
+import { Plus, Sparkles, Layers, ShieldCheck, Wifi, Copy, Check, Users, User, Mail, Calendar, Award, BookOpen, FileText, Trash2, X, Newspaper, Globe } from 'lucide-react';
 import { DocumentUploader } from './DocumentUploader';
 import { QuizConfigModal } from './QuizConfigModal';
 import { QuizPreviewEditor } from './QuizPreviewEditor';
@@ -7,7 +7,7 @@ import { ActiveQuizCard } from './ActiveQuizCard';
 import { generateQuizWithGemini, generateSmartFallbackQuiz } from '../../services/gemini_quiz_service';
 import { createQuizInDB, fetchAdminQuizzes } from '../../services/supabase';
 import { getRegisteredStudents, fetchLiveRegisteredStudents } from '../../services/student_service';
-import { getUPSCNotes, addUPSCNote, deleteUPSCNote, UPSC_SUBJECTS } from '../../services/notes_service';
+import { getUPSCNotes, addUPSCNote, deleteUPSCNote, UPSC_SUBJECTS, addNotesDocument, getNotesDocuments, fetchLiveNotesDocuments } from '../../services/notes_service';
 import { getCustomCurrentAffairs, addCustomCurrentAffairs, deleteCustomCurrentAffairs } from '../../services/current_affairs_service';
 
 export function AdminDashboard({ onSelectQuizForLeaderboard }) {
@@ -26,6 +26,7 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
   const [newNoteSummary, setNewNoteSummary] = useState('');
   const [newNoteContent, setNewNoteContent] = useState('');
   const [authorName, setAuthorName] = useState('Admin Faculty (Anish Manhotra)');
+  const [attachedFile, setAttachedFile] = useState(null);
 
   // Current Affairs Modal State
   const [showCAModal, setShowCAModal] = useState(false);
@@ -44,6 +45,55 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
   const [aiGeneratedQuiz, setAiGeneratedQuiz] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+
+  // External Quiz Link State
+  const [externalQuizLinks, setExternalQuizLinks] = useState([]);
+  const [showExtModal, setShowExtModal] = useState(false);
+  const [extTopic, setExtTopic] = useState('');
+  const [extUrl, setExtUrl] = useState('');
+
+  const loadExternalLinks = async () => {
+    try {
+      const res = await fetch('/api/student/quiz-links');
+      if (res.ok) {
+        const data = await res.json();
+        setExternalQuizLinks(data || []);
+      }
+    } catch (e) {}
+  };
+
+  const handleSaveExternalLinkSubmit = async (e) => {
+    e.preventDefault();
+    if (!extTopic.trim() || !extUrl.trim()) return;
+
+    try {
+      const res = await fetch('/api/admin/quiz-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: extTopic.trim(), externalUrl: extUrl.trim() })
+      });
+      if (res.ok) {
+        setExtTopic('');
+        setExtUrl('');
+        setShowExtModal(false);
+        await loadExternalLinks();
+      }
+    } catch (err) {
+      alert('Failed to save external quiz link.');
+    }
+  };
+
+  const handleDeleteExternalLink = async (linkId) => {
+    if (window.confirm('Delete this external AI quiz link?')) {
+      try {
+        await fetch(`/api/admin/quiz-links/${linkId}`, {
+          method: 'DELETE',
+          headers: { 'x-user-role': 'admin' }
+        });
+        await loadExternalLinks();
+      } catch (e) {}
+    }
+  };
 
   const loadQuizzes = async () => {
     setLoading(true);
@@ -99,9 +149,13 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
     loadStudents();
     loadNotes();
     loadCA();
+    loadExternalLinks();
 
     // Auto-update student directory every 3 seconds when students log in from any device
-    const studentPollInterval = setInterval(loadStudents, 3000);
+    const studentPollInterval = setInterval(() => {
+      loadStudents();
+      loadExternalLinks();
+    }, 3000);
 
     const handlePrefill = (e) => {
       if (e.detail && e.detail.text) {
@@ -140,38 +194,76 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
     loadCA();
   };
 
-  const handleDeleteCAFromAdmin = (id) => {
+  const handleDeleteCAFromAdmin = async (id) => {
     if (window.confirm('Delete this current affairs article from student feed?')) {
-      const updated = deleteCustomCurrentAffairs(id);
+      const updated = await deleteCustomCurrentAffairs(id, 'admin');
       setCurrentAffairs(updated);
     }
   };
 
-  const handleCreateNoteSubmit = (e) => {
+  const handleFileSelectForNote = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const sizeFormatted = file.size > 1024 * 1024
+      ? (file.size / (1024 * 1024)).toFixed(1) + ' MB'
+      : (file.size / 1024).toFixed(0) + ' KB';
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachedFile({
+        name: file.name,
+        type: file.type || 'application/pdf',
+        size: sizeFormatted,
+        dataUrl: reader.result
+      });
+      if (!newNoteTitle) {
+        setNewNoteTitle(file.name.replace(/\.[^/.]+$/, ''));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCreateNoteSubmit = async (e) => {
     e.preventDefault();
-    if (!newNoteTitle.trim() || !newNoteContent.trim()) {
-      alert('Please enter note title and content.');
+    if (!newNoteTitle.trim() && !attachedFile) {
+      alert('Please enter note title or attach a document file.');
       return;
     }
 
-    addUPSCNote({
-      title: newNoteTitle.trim(),
-      subject: newNoteSubject,
-      summary: newNoteSummary.trim(),
-      content: newNoteContent.trim(),
-      author: authorName.trim()
-    });
+    if (newNoteContent.trim()) {
+      await addUPSCNote({
+        title: newNoteTitle.trim(),
+        subject: newNoteSubject,
+        summary: newNoteSummary.trim(),
+        content: newNoteContent.trim(),
+        author: authorName.trim()
+      });
+    }
+
+    if (attachedFile) {
+      await addNotesDocument({
+        title: newNoteTitle.trim() || attachedFile.name,
+        subject: newNoteSubject,
+        fileType: attachedFile.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'docx',
+        fileSize: attachedFile.size,
+        fileData: attachedFile.dataUrl,
+        fileName: attachedFile.name,
+        uploadedBy: authorName.trim() || 'Admin Faculty'
+      });
+    }
 
     setNewNoteTitle('');
     setNewNoteSummary('');
     setNewNoteContent('');
+    setAttachedFile(null);
     setShowNotesModal(false);
     loadNotes();
   };
 
-  const handleDeleteNoteFromAdmin = (noteId) => {
+  const handleDeleteNoteFromAdmin = async (noteId) => {
     if (window.confirm('Delete this UPSC note from student dashboard?')) {
-      const updated = deleteUPSCNote(noteId);
+      const updated = await deleteUPSCNote(noteId, 'admin');
       setNotes(updated);
     }
   };
@@ -254,17 +346,29 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
           <h1 style={{ fontSize: '2rem', marginTop: '0.25rem' }}>Course Quiz Management</h1>
         </div>
 
-        <button 
-          className="btn btn-primary"
-          onClick={() => {
-            setExtractedDocText('Sample Course Material: Artificial Intelligence, Machine Learning, Neural Networks, Deep Learning, and Natural Language Processing concepts and principles.');
-            setDocFileName('Manual_Quiz_Creation.txt');
-            setShowConfigModal(true);
-          }}
-        >
-          <Plus size={18} />
-          Create Quick Quiz
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button 
+            className="btn btn-secondary"
+            onClick={() => setShowExtModal(true)}
+            style={{ border: '1px solid var(--primary-indigo)', color: 'var(--primary-indigo)' }}
+          >
+            <Globe size={18} />
+            Link External AI Quiz 🌐
+          </button>
+
+          <button 
+            className="btn btn-primary"
+            onClick={() => {
+              setExtractedDocText('Indian Polity: Preamble, Fundamental Rights, Reasonable Restrictions, and Key Supreme Court Rulings');
+              setDocFileName('Polity_Fundamental_Rights');
+              setShowConfigModal(true);
+            }}
+            style={{ background: 'linear-gradient(135deg, var(--primary-indigo), var(--primary-violet-dark))', border: 'none' }}
+          >
+            <Plus size={18} />
+            Quick Topic AI Quiz
+          </button>
+        </div>
       </div>
 
       {/* Network Access Sharing Banner */}
@@ -491,6 +595,7 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
                   <th>Email Address</th>
                   <th>Login Device / Platform</th>
                   <th>Joined Date</th>
+                  <th>Last Active Login</th>
                   <th>Quiz Attempts</th>
                   <th>Average Score</th>
                 </tr>
@@ -536,6 +641,9 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
                       </span>
                     </td>
                     <td style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>{std.joinedDate}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                      {std.lastLogin ? new Date(std.lastLogin).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Active'}
+                    </td>
                     <td>
                       <span style={{ fontWeight: 700 }}>{std.attemptsCount || 0}</span>
                     </td>
@@ -643,12 +751,52 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
                 <label className="input-label">Full Detailed Notes Content (Markdown Supported)</label>
                 <textarea
                   className="custom-textarea"
-                  style={{ height: '180px', fontFamily: 'monospace', fontSize: '0.9rem' }}
+                  style={{ height: '140px', fontFamily: 'monospace', fontSize: '0.9rem' }}
                   placeholder="Enter detailed headings, bullet points, constitutional articles, or concepts..."
                   value={newNoteContent}
                   onChange={e => setNewNoteContent(e.target.value)}
-                  required
                 />
+              </div>
+
+              {/* Document File Attachment Section */}
+              <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+                <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  📎 Attach Study Document File (PDF, DOCX, TXT Handout)
+                </label>
+                <div style={{
+                  border: '2px dashed var(--border-indigo)',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  textAlign: 'center',
+                  background: 'rgba(99, 102, 241, 0.05)',
+                  position: 'relative'
+                }}>
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.txt,.md"
+                    onChange={handleFileSelectForNote}
+                    style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
+                  />
+                  {attachedFile ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+                      <FileText size={20} color="#f59e0b" />
+                      <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                        {attachedFile.name} ({attachedFile.size})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setAttachedFile(null); }}
+                        style={{ background: 'rgba(244,63,94,0.15)', border: 'none', color: '#f43f5e', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                      📁 Click or drag file here to attach PDF/DOCX handover for students
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
@@ -755,6 +903,116 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
                 </button>
               </div>
             </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* Modal 5: External AI Quiz Link Manager */}
+      {showExtModal && (
+        <div className="modal-backdrop" onClick={() => setShowExtModal(false)}>
+          <div className="modal-card" style={{ width: '92%', maxWidth: '720px', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            
+            <button 
+              onClick={() => setShowExtModal(false)}
+              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <Globe size={24} color="var(--primary-indigo)" />
+              <h3>External AI Quiz Link Studio</h3>
+            </div>
+
+            <form onSubmit={handleSaveExternalLinkSubmit} style={{ marginBottom: '2rem' }}>
+              <div className="input-group">
+                <label className="input-label">Topic Name</label>
+                <input
+                  type="text"
+                  className="custom-input"
+                  placeholder="e.g. Indian Constitution & Article 21"
+                  value={extTopic}
+                  onChange={e => setExtTopic(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">External AI Quiz Site URL</label>
+                <input
+                  type="url"
+                  className="custom-input"
+                  placeholder="https://my-external-quiz-site.netlify.app"
+                  value={extUrl}
+                  onChange={e => setExtUrl(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }}>
+                Save External Quiz Link & Generate Access Code 🌐
+              </button>
+            </form>
+
+            {/* Active External Links Roster */}
+            <div>
+              <h4 style={{ fontSize: '1rem', marginBottom: '0.75rem', fontWeight: 700 }}>
+                Active External AI Quiz Links ({externalQuizLinks.length})
+              </h4>
+
+              {externalQuizLinks.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>No external quiz links added yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {externalQuizLinks.map(item => (
+                    <div
+                      key={item.id}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid var(--border-light)',
+                        borderRadius: '12px',
+                        padding: '0.85rem 1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1rem'
+                      }}
+                    >
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                          {item.topic}
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px', wordBreak: 'break-all' }}>
+                          🔗 {item.externalUrl}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span style={{
+                          background: 'linear-gradient(135deg, var(--primary-indigo), #7c3aed)',
+                          color: '#ffffff',
+                          padding: '0.35rem 0.75rem',
+                          borderRadius: '8px',
+                          fontFamily: 'monospace',
+                          fontWeight: 800,
+                          fontSize: '0.9rem'
+                        }}>
+                          {item.access_code}
+                        </span>
+
+                        <button
+                          onClick={() => handleDeleteExternalLink(item.id)}
+                          style={{ background: 'rgba(244, 63, 94, 0.12)', border: 'none', color: '#f43f5e', padding: '6px', borderRadius: '6px', cursor: 'pointer' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
           </div>
         </div>

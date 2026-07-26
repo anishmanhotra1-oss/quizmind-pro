@@ -168,11 +168,12 @@ async function saveStudent(studentData) {
     ? studentData.email.trim()
     : `${cleanName.toLowerCase().replace(/\s+/g, '.')}@student.edu`;
 
-  const existingIndex = db.students.findIndex(s => s.name.toLowerCase() === cleanName.toLowerCase() || s.email.toLowerCase() === cleanEmail.toLowerCase());
+  const existingIndex = db.students.findIndex(s => s.name.toLowerCase() === cleanName.toLowerCase() || (s.email && s.email.toLowerCase() === cleanEmail.toLowerCase() && cleanEmail.includes('@')));
 
   if (existingIndex !== -1) {
     db.students[existingIndex] = {
       ...db.students[existingIndex],
+      name: cleanName, // Always preserve exact name entered during student login
       lastLogin: new Date().toISOString(),
       device: studentData.device || db.students[existingIndex].device || 'Web Client'
     };
@@ -424,6 +425,132 @@ async function deleteCADocument(docId) {
   return db.caDocuments;
 }
 
+/**
+ * Retrieves student profile with attempts and asked doubts history.
+ */
+async function getStudentProfile(identifier) {
+  const db = await readDb();
+  if (!db.students) await getStudents();
+  const q = (identifier || '').toLowerCase().trim();
+  const student = db.students.find(s => 
+    s.id.toLowerCase() === q || 
+    s.name.toLowerCase() === q || 
+    s.email.toLowerCase() === q
+  );
+
+  const doubts = (db.chatMessages || []).filter(msg => 
+    msg.senderName && msg.senderName.toLowerCase() === (student ? student.name.toLowerCase() : q)
+  );
+
+  const attempts = (db.attempts || []).filter(att => 
+    att.student_name && att.student_name.toLowerCase() === (student ? student.name.toLowerCase() : q)
+  ).map(att => {
+    const quizObj = (db.quizzes || []).find(qz => qz.id === att.quiz_id);
+    const scorePct = att.total_questions > 0 ? Math.round((att.score / att.total_questions) * 100) : 0;
+    return {
+      ...att,
+      quizTitle: quizObj ? quizObj.title : 'Interactive AI Assessment Quiz',
+      scorePercentage: scorePct
+    };
+  });
+
+  if (!student) {
+    return {
+      id: 'std-' + Date.now().toString().slice(-4),
+      name: identifier || 'Student Learner',
+      email: `${(identifier || 'student').toLowerCase().replace(/\s+/g, '.')}@student.edu`,
+      joinedDate: new Date().toISOString().split('T')[0],
+      lastLogin: new Date().toISOString(),
+      device: 'Web Client',
+      attemptsCount: attempts.length,
+      avgScore: attempts.length > 0 ? Math.round(attempts.reduce((a, b) => a + b.scorePercentage, 0) / attempts.length) : 0,
+      doubtsCount: doubts.length,
+      doubtsHistory: doubts,
+      attemptsHistory: attempts
+    };
+  }
+
+  return {
+    ...student,
+    attemptsCount: attempts.length > 0 ? attempts.length : student.attemptsCount || 0,
+    avgScore: attempts.length > 0 ? Math.round(attempts.reduce((a, b) => a + b.scorePercentage, 0) / attempts.length) : student.avgScore || 0,
+    doubtsCount: doubts.length,
+    doubtsHistory: doubts,
+    attemptsHistory: attempts
+  };
+}
+
+/**
+ * External AI Quiz Links & Webhook Results
+ */
+async function getExternalQuizLinks() {
+  const db = await readDb();
+  if (!db.externalQuizLinks) {
+    db.externalQuizLinks = [];
+  }
+  return db.externalQuizLinks;
+}
+
+async function saveExternalQuizLink({ topic, externalUrl }) {
+  const db = await readDb();
+  if (!db.externalQuizLinks) db.externalQuizLinks = [];
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  const newLink = {
+    id: 'ext-link-' + Date.now(),
+    topic: topic.trim(),
+    externalUrl: externalUrl.trim(),
+    access_code: code,
+    is_external: true,
+    created_at: new Date().toISOString()
+  };
+
+  db.externalQuizLinks.unshift(newLink);
+  await writeDb(db);
+  return newLink;
+}
+
+async function deleteExternalQuizLink(linkId) {
+  const db = await readDb();
+  if (!db.externalQuizLinks) return [];
+  db.externalQuizLinks = db.externalQuizLinks.filter(l => l.id !== linkId);
+  await writeDb(db);
+  return db.externalQuizLinks;
+}
+
+async function saveWebhookResult({ studentId, topic, score }) {
+  const db = await readDb();
+  if (!db.externalQuizResults) db.externalQuizResults = [];
+
+  const newResult = {
+    id: 'res-' + Date.now(),
+    studentId: String(studentId),
+    topic: String(topic),
+    score: Number(score),
+    submittedAt: new Date().toISOString()
+  };
+
+  db.externalQuizResults.unshift(newResult);
+
+  // Also record as a student attempt so it reflects live on student profiles & leaderboard
+  if (!db.attempts) db.attempts = [];
+  const attemptRecord = {
+    id: 'att-ext-' + Date.now(),
+    quiz_id: 'ext-' + topic.replace(/[^a-zA-Z0-9]/g, '_'),
+    student_name: String(studentId),
+    score_achieved: Number(score),
+    total_questions: 100,
+    scorePercentage: Number(score),
+    time_spent_seconds: 120,
+    completed_at: new Date().toISOString()
+  };
+  db.attempts.unshift(attemptRecord);
+
+  await writeDb(db);
+  return newResult;
+}
+
 module.exports = {
   getQuizzes,
   saveQuiz,
@@ -436,6 +563,7 @@ module.exports = {
   getStudents,
   saveStudent,
   updateStudentStatsInDB,
+  getStudentProfile,
   getUPSCNotes,
   saveUPSCNote,
   deleteUPSCNote,
@@ -447,7 +575,11 @@ module.exports = {
   deleteCurrentAffairs,
   getCADocuments,
   saveCADocument,
-  deleteCADocument
+  deleteCADocument,
+  getExternalQuizLinks,
+  saveExternalQuizLink,
+  deleteExternalQuizLink,
+  saveWebhookResult
 };
 
 

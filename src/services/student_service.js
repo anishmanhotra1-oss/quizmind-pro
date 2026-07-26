@@ -56,15 +56,24 @@ export function getRegisteredStudents() {
 }
 
 export async function registerStudentAccount({ name, email, device }) {
+  if (!name || !name.trim()) return null;
   const cleanName = name.trim();
   const cleanEmail = (email && email.trim()) ? email.trim() : `${cleanName.toLowerCase().replace(/\s+/g, '.')}@student.edu`;
   
   // Local registration
   const students = getRegisteredStudents();
-  const existing = students.find(s => s.name.toLowerCase() === cleanName.toLowerCase() || s.email.toLowerCase() === cleanEmail.toLowerCase());
+  const existingIndex = students.findIndex(s => s.name.toLowerCase() === cleanName.toLowerCase());
   
-  let newStudent = existing;
-  if (!existing) {
+  let newStudent;
+  if (existingIndex !== -1) {
+    students[existingIndex] = {
+      ...students[existingIndex],
+      name: cleanName,
+      lastLogin: new Date().toISOString()
+    };
+    newStudent = students[existingIndex];
+    localStorage.setItem('QUIZMIND_STUDENTS', JSON.stringify(students));
+  } else {
     newStudent = {
       id: 'std-' + (Date.now().toString().slice(-4)),
       name: cleanName,
@@ -77,6 +86,10 @@ export async function registerStudentAccount({ name, email, device }) {
     const updated = [newStudent, ...students];
     localStorage.setItem('QUIZMIND_STUDENTS', JSON.stringify(updated));
   }
+
+  // Always save exact name to active student session storage
+  localStorage.setItem('QUIZMIND_STUDENT_NAME', cleanName);
+  localStorage.setItem('QUIZMIND_STUDENT_EMAIL', cleanEmail);
 
   // Server sync for global Admin Dashboard auto-update from any device
   try {
@@ -98,6 +111,36 @@ export async function registerStudentAccount({ name, email, device }) {
   }
 
   return newStudent;
+}
+
+export async function fetchStudentProfile(identifier) {
+  if (!identifier) return null;
+  try {
+    const res = await fetch(`/api/students/profile/${encodeURIComponent(identifier)}`);
+    if (res.ok) {
+      const profile = await res.json();
+      return profile;
+    }
+  } catch (e) {}
+
+  const students = getRegisteredStudents();
+  const found = students.find(s => 
+    s.name.toLowerCase() === identifier.toLowerCase() || 
+    s.email.toLowerCase() === identifier.toLowerCase() ||
+    s.id.toLowerCase() === identifier.toLowerCase()
+  );
+
+  return found || {
+    id: 'std-' + (Date.now().toString().slice(-4)),
+    name: identifier,
+    email: `${identifier.toLowerCase().replace(/\s+/g, '.')}@student.edu`,
+    joinedDate: new Date().toISOString().split('T')[0],
+    device: 'Web Client',
+    attemptsCount: 0,
+    avgScore: 0,
+    doubtsCount: 0,
+    doubtsHistory: []
+  };
 }
 
 export function updateStudentStats(studentName, newScorePercentage) {

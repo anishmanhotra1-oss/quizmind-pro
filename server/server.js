@@ -172,10 +172,10 @@ app.post('/api/quizzes/generate', async (req, res) => {
     });
   }
 
-  const cleanText = preprocessDocumentText(documentText);
-  if (!cleanText || cleanText.length < 20) {
+  const cleanText = preprocessDocumentText(documentText) || (documentText || '').trim();
+  if (!cleanText || cleanText.length < 3) {
     return res.status(400).json({
-      error: 'Not enough readable study text found in this document. Please ensure the file contains subject matter text.'
+      error: 'Please enter a valid subject topic or text command to generate a quiz.'
     });
   }
 
@@ -186,21 +186,21 @@ app.post('/api/quizzes/generate', async (req, res) => {
     try {
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeApiKey}`;
 
-      const systemPrompt = `You are a Senior UPSC CSE & Higher Education Test Examiner.
+      const systemPrompt = `You are a Senior UPSC CSE & Higher Education Chief Test Examiner.
 STRICT EXAMINER MANDATES:
-1. STRICT DOCUMENT ADHERENCE: Generate questions 100% EXCLUSIVELY based on the facts, concepts, mechanisms, and arguments presented in the provided study document.
-2. NO META PREFIXES: NEVER use prefixes like "According to the document...", "Based on the uploaded text...", "In the provided file...". Ask questions directly as authentic, professional exam items.
-3. NO TRUNCATED SENTENCES OR DOTS: NEVER output partial sentences, truncated text, or ellipses ("..."). Every question sentence and option MUST be complete, grammatically sound, and fully written out.
+1. TOPIC & PROMPT COMMAND FIDELITY: Generate questions based on the topic, syllabus concept, or study text specified by the instructor.
+2. NO META PREFIXES: NEVER use prefixes like "According to the document...", "Based on the text...". Ask questions directly as authentic, professional exam items.
+3. NO TRUNCATED SENTENCES OR DOTS: Every question sentence and option MUST be complete, grammatically sound, and fully written out.
 4. UPSC EXAMINER QUESTION PATTERNS (Vary the question types across the set):
    - STATEMENT-BASED PATTERN: "Consider the following statements regarding [Concept]:\n1. [Statement I]\n2. [Statement II]\nWhich of the statements given above is/are correct?" (Options: "1 only", "2 only", "Both 1 and 2", "Neither 1 nor 2")
    - ASSERTION-REASON PATTERN: "Assertion (A): [Premise]\nReason (R): [Explanation]\nWhich one of the following is correct?"
    - FACTUAL & LOGICAL ANALYSIS PATTERN: "With reference to [Subject], which one of the following statements is correct?"
 5. HIGH-QUALITY OPTIONS & EXPLANATIONS:
-   - Provide exactly 4 clear, plausible, distinct options and an educational explanation citing the document.`;
+   - Provide exactly 4 clear, plausible, distinct options and a thorough educational explanation.`;
 
-      const userPrompt = `Thoroughly analyze the following study document content and generate exactly ${numQuestions} ${difficulty}-level UPSC examiner style questions (mix Statement-Based, Assertion-Reason, and Analytical Logic patterns):
+      const userPrompt = `Generate exactly ${numQuestions} ${difficulty}-level UPSC examiner style questions based on the following topic / study material prompt (mix Statement-Based, Assertion-Reason, and Analytical Logic patterns):
 
-STUDY DOCUMENT CONTENT:
+TOPIC / PROMPT COMMAND:
 """
 ${cleanText.substring(0, 25000)}
 """`;
@@ -363,6 +363,8 @@ app.post('/api/quizzes/:id/attempts', async (req, res) => {
 
   try {
     await db.saveAttempt(attempt);
+    const scorePct = totalQuestions > 0 ? Math.round(((Number(score) || 0) / Number(totalQuestions)) * 100) : 0;
+    await db.updateStudentStatsInDB(studentName, scorePct);
     res.status(201).json(attempt);
   } catch (err) {
     res.status(500).json({ error: 'Failed to save attempt.' });
@@ -381,6 +383,41 @@ app.get('/api/quizzes/:id/attempts', async (req, res) => {
 });
 
 // ----------------------------------------------------
+// COMMUNITY DOUBTS CHAT API ENDPOINTS
+// ----------------------------------------------------
+app.get('/api/chat/messages', async (req, res) => {
+  try {
+    const messages = await db.getChatMessages();
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch community chat messages.' });
+  }
+});
+
+app.post('/api/chat/messages', async (req, res) => {
+  const { senderName, senderRole, messageText, attachment } = req.body;
+  if (!senderName || (!messageText && !attachment)) {
+    return res.status(400).json({ error: 'Message text or file attachment is required.' });
+  }
+
+  const newMsg = {
+    id: 'msg-' + Date.now(),
+    senderName,
+    senderRole: senderRole || 'student',
+    messageText: messageText || '',
+    attachment: attachment || null,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  };
+
+  try {
+    await db.saveChatMessage(newMsg);
+    res.status(201).json(newMsg);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save chat message.' });
+  }
+});
+
+// ----------------------------------------------------
 // REGISTERED STUDENT DIRECTORY API ENDPOINTS
 // ----------------------------------------------------
 app.get('/api/students', async (req, res) => {
@@ -389,6 +426,15 @@ app.get('/api/students', async (req, res) => {
     res.json(students);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch registered student directory.' });
+  }
+});
+
+app.get('/api/students/profile/:identifier', async (req, res) => {
+  try {
+    const profile = await db.getStudentProfile(req.params.identifier);
+    res.json(profile);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch student profile details.' });
   }
 });
 
@@ -438,6 +484,10 @@ app.post('/api/notes', async (req, res) => {
 });
 
 app.delete('/api/notes/:id', async (req, res) => {
+  const userRole = req.headers['x-user-role'] || req.query.role;
+  if (userRole !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied. Only Admin can delete notes.' });
+  }
   try {
     const updated = await db.deleteUPSCNote(req.params.id);
     res.json(updated);
@@ -465,6 +515,10 @@ app.post('/api/notes/documents', async (req, res) => {
 });
 
 app.delete('/api/notes/documents/:id', async (req, res) => {
+  const userRole = req.headers['x-user-role'] || req.query.role;
+  if (userRole !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied. Only Admin can delete notes documents.' });
+  }
   try {
     const updated = await db.deleteNotesDocument(req.params.id);
     res.json(updated);
@@ -495,6 +549,10 @@ app.post('/api/current-affairs', async (req, res) => {
 });
 
 app.delete('/api/current-affairs/:id', async (req, res) => {
+  const userRole = req.headers['x-user-role'] || req.query.role;
+  if (userRole !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied. Only Admin can delete current affairs.' });
+  }
   try {
     const updated = await db.deleteCurrentAffairs(req.params.id);
     res.json(updated);
@@ -563,6 +621,10 @@ app.post('/api/current-affairs/documents', async (req, res) => {
 });
 
 app.delete('/api/current-affairs/documents/:id', async (req, res) => {
+  const userRole = req.headers['x-user-role'] || req.query.role;
+  if (userRole !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied. Only Admin can delete current affairs documents.' });
+  }
   try {
     const updated = await db.deleteCADocument(req.params.id);
     res.json(updated);
@@ -822,6 +884,94 @@ ${studentCopyText.substring(0, 15000)}
   }
 
   res.status(500).json({ error: `Artha AI Copy Evaluation failed: ${lastError || 'Service error'}` });
+});
+
+const WEBHOOK_SECRET_TOKEN = process.env.WEBHOOK_SECRET_TOKEN || 'super-secret-bearer-token-12345';
+
+// ----------------------------------------------------
+// CROSS-SITE EXTERNAL QUIZ & WEBHOOK API ENDPOINTS
+// ----------------------------------------------------
+
+// Cross-Origin OPTIONS preflight handler for webhook
+app.options('/webhooks/quiz-result', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.sendStatus(204);
+});
+
+// Secure POST Webhook endpoint for external AI-generated static sites
+app.post('/webhooks/quiz-result', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: Missing Bearer Token in Authorization header.' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  if (token !== WEBHOOK_SECRET_TOKEN) {
+    return res.status(403).json({ error: 'Forbidden: Invalid Bearer Token.' });
+  }
+
+  const { studentId, topic, score } = req.body;
+  if (!studentId || !topic || score === undefined) {
+    return res.status(400).json({ error: 'Missing required payload: studentId, topic, or score.' });
+  }
+
+  try {
+    const savedResult = await db.saveWebhookResult({ studentId, topic, score });
+    return res.status(200).json({
+      success: true,
+      message: 'Quiz result recorded successfully in QuizMind Pro DB.',
+      resultId: savedResult.id
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to record webhook quiz result.' });
+  }
+});
+
+// Student Portal GET route for external quiz links (CORS Enabled for any frontend)
+app.get('/api/student/quiz-links', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  try {
+    const links = await db.getExternalQuizLinks();
+    res.json(links);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch external quiz links.' });
+  }
+});
+
+// Admin POST route to save a new external quiz link
+app.post('/api/admin/quiz-links', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  const { topic, externalUrl } = req.body;
+  if (!topic || !externalUrl) {
+    return res.status(400).json({ error: 'Topic name and external URL are required.' });
+  }
+  try {
+    const link = await db.saveExternalQuizLink({ topic, externalUrl });
+    res.status(201).json(link);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create external quiz link.' });
+  }
+});
+
+// Admin DELETE route to remove an external quiz link
+app.delete('/api/admin/quiz-links/:id', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  const userRole = req.headers['x-user-role'] || req.query.role;
+  if (userRole !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied. Only Admin can delete quiz links.' });
+  }
+  try {
+    const updated = await db.deleteExternalQuizLink(req.params.id);
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete external quiz link.' });
+  }
 });
 
 

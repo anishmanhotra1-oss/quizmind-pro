@@ -280,13 +280,19 @@ export async function addUPSCNote(newNoteData) {
   return newNote;
 }
 
-export async function deleteUPSCNote(noteId) {
+export async function deleteUPSCNote(noteId, userRole = 'student') {
+  if (userRole !== 'admin') {
+    return getUPSCNotes();
+  }
   const currentNotes = getUPSCNotes();
   const updated = currentNotes.filter(n => n.id !== noteId);
   saveUPSCNotes(updated);
 
   try {
-    await fetch(`/api/notes/${noteId}`, { method: 'DELETE' });
+    await fetch(`/api/notes/${noteId}`, {
+      method: 'DELETE',
+      headers: { 'x-user-role': userRole }
+    });
   } catch (e) {}
 
   return updated;
@@ -300,8 +306,21 @@ export async function fetchLiveNotesDocuments() {
     const res = await fetch('/api/notes/documents');
     if (res.ok) {
       const serverDocs = await res.json();
-      localStorage.setItem(STORAGE_KEY_NOTES_DOCS, JSON.stringify(serverDocs));
-      return serverDocs;
+      const localDocs = getNotesDocuments();
+      const docMap = new Map();
+      if (Array.isArray(serverDocs)) {
+        serverDocs.forEach(d => docMap.set(d.id, d));
+      }
+      if (Array.isArray(localDocs)) {
+        localDocs.forEach(d => {
+          if (!docMap.has(d.id)) {
+            docMap.set(d.id, d);
+          }
+        });
+      }
+      const mergedDocs = Array.from(docMap.values());
+      localStorage.setItem(STORAGE_KEY_NOTES_DOCS, JSON.stringify(mergedDocs));
+      return mergedDocs;
     }
   } catch (e) {}
   return getNotesDocuments();
@@ -367,13 +386,19 @@ export async function addNotesDocument(doc) {
   return newDoc;
 }
 
-export async function deleteNotesDocument(docId) {
+export async function deleteNotesDocument(docId, userRole = 'student') {
+  if (userRole !== 'admin') {
+    return getNotesDocuments();
+  }
   const current = getNotesDocuments();
   const updated = current.filter(d => d.id !== docId);
   localStorage.setItem(STORAGE_KEY_NOTES_DOCS, JSON.stringify(updated));
 
   try {
-    await fetch(`/api/notes/documents/${docId}`, { method: 'DELETE' });
+    await fetch(`/api/notes/documents/${docId}`, {
+      method: 'DELETE',
+      headers: { 'x-user-role': userRole }
+    });
   } catch (e) {}
 
   return updated;

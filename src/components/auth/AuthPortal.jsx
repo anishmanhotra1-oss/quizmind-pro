@@ -27,20 +27,27 @@ export function AuthPortal({ onStudentLogin, onAdminLogin }) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  const handleStudentSubmit = (e) => {
+  const handleStudentSubmit = async (e) => {
     e.preventDefault();
-    if (!studentNameInput.trim()) {
+    const cleanName = studentNameInput.trim();
+    const cleanEmail = studentEmailInput.trim();
+
+    if (!cleanName) {
       setStudentError('Please enter your full name to proceed.');
       return;
     }
 
     setStudentError('');
-    const registered = registerStudentAccount({
-      name: studentNameInput.trim(),
-      email: studentEmailInput.trim()
+
+    const registered = await registerStudentAccount({
+      name: cleanName,
+      email: cleanEmail
     });
 
-    onStudentLogin(registered.name, registered.email);
+    const finalName = (registered && registered.name) ? registered.name : cleanName;
+    const finalEmail = (registered && registered.email) ? registered.email : (cleanEmail || `${cleanName.toLowerCase().replace(/\s+/g, '.')}@student.edu`);
+
+    onStudentLogin(finalName, finalEmail);
   };
 
   const handleAdminSubmit = async (e) => {

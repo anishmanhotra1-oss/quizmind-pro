@@ -89,15 +89,19 @@ export default function App() {
 
   // Student Authentication Handler
   const handleStudentLogin = (name, email) => {
-    registerStudentAccount({ name, email });
+    if (!name || typeof name !== 'string' || !name.trim()) return;
+    const cleanName = name.trim();
+    const cleanEmail = email && email.trim() ? email.trim() : `${cleanName.toLowerCase().replace(/\s+/g, '.')}@student.edu`;
+    
+    registerStudentAccount({ name: cleanName, email: cleanEmail });
 
     setStorageItem('QUIZMIND_AUTH', 'true');
     setStorageItem('QUIZMIND_ROLE', 'student');
-    setStorageItem('QUIZMIND_STUDENT_NAME', name);
-    if (email) setStorageItem('QUIZMIND_STUDENT_EMAIL', email);
+    setStorageItem('QUIZMIND_STUDENT_NAME', cleanName);
+    setStorageItem('QUIZMIND_STUDENT_EMAIL', cleanEmail);
     
-    setStudentName(name);
-    if (email) setStudentEmail(email);
+    setStudentName(cleanName);
+    setStudentEmail(cleanEmail);
     setUserRole('student');
     setIsAuthenticated(true);
     setView('student_join');
@@ -199,6 +203,7 @@ export default function App() {
               <StudentJoin 
                 onStartQuiz={handleStartQuiz} 
                 defaultStudentName={studentName}
+                onStudentLogin={handleStudentLogin}
               />
             )}
 

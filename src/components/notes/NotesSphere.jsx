@@ -88,8 +88,12 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
 
   const handleDeleteNote = async (e, noteId) => {
     e.stopPropagation();
+    if (userRole !== 'admin') {
+      alert('Only Admin users can delete notes.');
+      return;
+    }
     if (window.confirm('Are you sure you want to delete this UPSC note?')) {
-      const updated = await deleteUPSCNote(noteId);
+      const updated = await deleteUPSCNote(noteId, userRole);
       setNotes(updated);
       if (activeNote && activeNote.id === noteId) setActiveNote(null);
     }
@@ -161,8 +165,12 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
 
   const handleDeleteDoc = async (e, docId) => {
     e.stopPropagation();
+    if (userRole !== 'admin') {
+      alert('Only Admin users can delete study document dossiers.');
+      return;
+    }
     if (window.confirm('Delete this study document file?')) {
-      const updated = await deleteNotesDocument(docId);
+      const updated = await deleteNotesDocument(docId, userRole);
       setDocuments(updated);
     }
   };

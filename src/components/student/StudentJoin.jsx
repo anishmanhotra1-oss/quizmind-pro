@@ -4,20 +4,42 @@ import { fetchQuizByAccessCode, fetchQuestionsForQuiz, fetchAdminQuizzes } from 
 import { getUPSCNotes, UPSC_SUBJECTS } from '../../services/notes_service';
 import { registerStudentAccount } from '../../services/student_service';
 
-export function StudentJoin({ onStartQuiz, defaultStudentName }) {
+function buildExternalQuizUrl(rawUrl, studentName, topic) {
+  try {
+    let formattedUrl = (rawUrl || '').trim();
+    if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = 'https://' + formattedUrl;
+    }
+    const targetUrl = new URL(formattedUrl);
+    targetUrl.searchParams.set('studentId', (studentName || 'Student').trim());
+    targetUrl.searchParams.set('topic', (topic || 'Quiz').trim());
+    return targetUrl.toString();
+  } catch (e) {
+    return rawUrl;
+  }
+}
+
+export function StudentJoin({ onStartQuiz, defaultStudentName, onStudentLogin }) {
   const [accessCode, setAccessCode] = useState('');
-  const [studentName, setStudentName] = useState(defaultStudentName || '');
+  const [studentName, setStudentName] = useState(() => defaultStudentName || localStorage.getItem('QUIZMIND_STUDENT_NAME') || '');
   const [errorMsg, setErrorMsg] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   
-  // Available 6-Digit Access Codes & Published Notes
+  // Available 6-Digit Access Codes, External Links & Published Notes
   const [availableQuizzes, setAvailableQuizzes] = useState([]);
+  const [externalLinks, setExternalLinks] = useState([]);
   const [publishedNotes, setPublishedNotes] = useState([]);
 
   useEffect(() => {
     fetchAdminQuizzes()
       .then(data => setAvailableQuizzes(data || []))
       .catch(() => {});
+
+    fetch('/api/student/quiz-links')
+      .then(res => res.json())
+      .then(data => setExternalLinks(data || []))
+      .catch(() => {});
+
     setPublishedNotes(getUPSCNotes());
   }, []);
 
@@ -32,7 +54,26 @@ export function StudentJoin({ onStartQuiz, defaultStudentName }) {
     setErrorMsg('');
 
     try {
-      registerStudentAccount({ name: studentName.trim() });
+      const cleanName = studentName.trim();
+      const registered = await registerStudentAccount({ name: cleanName });
+      
+      localStorage.setItem('QUIZMIND_STUDENT_NAME', cleanName);
+      if (registered && registered.email) {
+        localStorage.setItem('QUIZMIND_STUDENT_EMAIL', registered.email);
+      }
+
+      if (onStudentLogin) {
+        onStudentLogin(cleanName, registered ? registered.email : '');
+      }
+
+      // Check external links first
+      const foundExt = externalLinks.find(l => l.access_code === cleanCode);
+      if (foundExt) {
+        const targetUrl = buildExternalQuizUrl(foundExt.externalUrl, cleanName, foundExt.topic);
+        window.open(targetUrl, '_blank');
+        setIsJoining(false);
+        return;
+      }
 
       const quiz = await fetchQuizByAccessCode(cleanCode);
       const questions = await fetchQuestionsForQuiz(quiz.id);
@@ -44,7 +85,7 @@ export function StudentJoin({ onStartQuiz, defaultStudentName }) {
       onStartQuiz({
         quiz,
         questions,
-        studentName: studentName.trim()
+        studentName: cleanName
       });
     } catch (err) {
       setErrorMsg(err.message || 'Invalid 6-digit access code.');
@@ -95,7 +136,13 @@ export function StudentJoin({ onStartQuiz, defaultStudentName }) {
                 style={{ paddingLeft: '2.8rem', height: '46px' }}
                 placeholder="e.g. Alex Morgan"
                 value={studentName}
-                onChange={e => setStudentName(e.target.value)}
+                onChange={e => {
+                  setStudentName(e.target.value);
+                  localStorage.setItem('QUIZMIND_STUDENT_NAME', e.target.value);
+                  if (onStudentLogin && e.target.value.trim()) {
+                    onStudentLogin(e.target.value.trim());
+                  }
+                }}
                 required
               />
             </div>
@@ -206,6 +253,61 @@ export function StudentJoin({ onStartQuiz, defaultStudentName }) {
                     flexShrink: 0
                   }}>
                     {quiz.access_code}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* External AI Quiz Links Roster */}
+        {externalLinks.length > 0 && (
+          <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-light)' }}>
+            <span style={{ fontSize: '0.82rem', color: '#a855f7', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              🌐 External AI Quizzes ({externalLinks.length}):
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              {externalLinks.map(link => (
+                <div
+                  key={link.id}
+                  onClick={() => {
+                    const cleanName = studentName.trim() || 'Student';
+                    const targetUrl = buildExternalQuizUrl(link.externalUrl, cleanName, link.topic);
+                    window.open(targetUrl, '_blank');
+                  }}
+                  style={{
+                    background: 'rgba(168, 85, 247, 0.08)',
+                    border: '1px solid rgba(168, 85, 247, 0.25)',
+                    padding: '0.85rem 1.1rem',
+                    borderRadius: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.75rem',
+                    transition: 'var(--transition-fast)'
+                  }}
+                >
+                  <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      🌐 {link.topic}
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#a855f7', marginTop: '2px' }}>
+                      External AI Test • Click to Launch
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                    color: '#ffffff',
+                    padding: '0.4rem 0.85rem',
+                    borderRadius: '10px',
+                    fontFamily: 'monospace',
+                    fontSize: '0.95rem',
+                    fontWeight: 800,
+                    letterSpacing: '1px'
+                  }}>
+                    {link.access_code}
                   </div>
                 </div>
               ))}

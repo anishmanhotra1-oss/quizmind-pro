@@ -141,8 +141,12 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
 
   const handleDeleteArticle = async (e, articleId) => {
     e.stopPropagation();
+    if (userRole !== 'admin') {
+      alert('Only Admin users can delete current affairs articles.');
+      return;
+    }
     if (window.confirm('Delete this published current affairs article?')) {
-      const updated = await deleteCustomCurrentAffairs(articleId);
+      const updated = await deleteCustomCurrentAffairs(articleId, userRole);
       setArticles(updated);
       if (selectedArticle && selectedArticle.id === articleId) setSelectedArticle(null);
     }
@@ -214,8 +218,12 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
 
   const handleDeleteDoc = async (e, docId) => {
     e.stopPropagation();
+    if (userRole !== 'admin') {
+      alert('Only Admin users can delete dossiers and document attachments.');
+      return;
+    }
     if (window.confirm('Delete this attached document?')) {
-      const updated = await deleteCADocument(docId);
+      const updated = await deleteCADocument(docId, userRole);
       setDocuments(updated);
     }
   };

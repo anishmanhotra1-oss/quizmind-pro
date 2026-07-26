@@ -93,31 +93,29 @@ function normalizeQuizResult(result, fallbackTitle = 'AI Generated Quiz') {
  * based 100% on the uploaded file text when Gemini API key is missing or unavailable.
  */
 export function generateSmartFallbackQuiz(documentText, count = 5, difficulty = 'Medium') {
-  const clean = preprocessDocumentText(documentText);
-  if (!clean || clean.length < 20) {
-    throw new Error('Not enough readable text in document to generate a quiz.');
+  const clean = preprocessDocumentText(documentText) || (documentText || '').trim();
+  if (!clean || clean.length < 3) {
+    throw new Error('Please enter a valid topic or subject prompt to generate a quiz.');
   }
 
-  // Extract complete substantive sentences
-  const sentences = clean
+  // Extract complete substantive sentences or topic words
+  let sentences = clean
     .split(/(?<=[.!?])\s+/)
     .map(s => s.trim().replace(/^[^a-zA-Z0-9]+/, ''))
-    .filter(s => s.length > 35 && s.length < 280 && !/^(page|table|figure|http|www|\d+$)/i.test(s));
+    .filter(s => s.length > 15 && !/^(page|table|figure|http|www|\d+$)/i.test(s));
 
   if (sentences.length === 0) {
-    throw new Error('Could not find enough structured paragraphs in uploaded document.');
+    sentences = [clean, `${clean} key framework and operational mechanics`, `${clean} policy guidelines and institutional standards` + ''];
   }
 
   const questions = [];
-  const targetCount = Math.min(count, Math.max(3, sentences.length));
+  const targetCount = count;
 
   for (let i = 0; i < targetCount; i++) {
     const mainSentence = sentences[i % sentences.length];
     const secondarySentence = sentences[(i + 1) % sentences.length];
     const distractor1 = sentences[(i + 2) % sentences.length];
-    const distractor2 = sentences[(i + 3) % sentences.length];
 
-    // Pick question pattern type (0: Statement-Based, 1: Assertion-Reason, 2: Analytical Logic)
     const patternType = i % 3;
 
     let questionText = '';
@@ -125,18 +123,16 @@ export function generateSmartFallbackQuiz(documentText, count = 5, difficulty = 
     let correctOptionIndex = 0;
 
     if (patternType === 0) {
-      // Statement-Based Question Format (UPSC Pattern)
-      questionText = `Consider the following statements regarding the subject matter:\n\n1. ${mainSentence}\n2. ${distractor1}\n\nWhich of the statements given above is/are correct?`;
+      questionText = `Consider the following statements regarding ${clean.substring(0, 60)}:\n\n1. Statement I: ${mainSentence}\n2. Statement II: ${secondarySentence}\n\nWhich of the statements given above is/are correct?`;
       options = [
         '1 only',
         '2 only',
         'Both 1 and 2',
         'Neither 1 nor 2'
       ];
-      correctOptionIndex = 0; // Statement 1 is true based on text
+      correctOptionIndex = 0;
     } else if (patternType === 1) {
-      // Assertion-Reason Format (UPSC Pattern)
-      questionText = `Assertion (A): ${mainSentence}\nReason (R): ${secondarySentence !== mainSentence ? secondarySentence : 'This principle dictates the underlying operational framework.'}\n\nWhich one of the following options is correct?`;
+      questionText = `Assertion (A): ${mainSentence}\nReason (R): ${secondarySentence}\n\nWhich one of the following options is correct?`;
       options = [
         'Both (A) and (R) are true, and (R) is the correct explanation of (A)',
         'Both (A) and (R) are true, but (R) is NOT the correct explanation of (A)',
@@ -145,34 +141,27 @@ export function generateSmartFallbackQuiz(documentText, count = 5, difficulty = 
       ];
       correctOptionIndex = 0;
     } else {
-      // Analytical Logic Format
-      questionText = `Which one of the following statements correctly evaluates the core principle of this subject?`;
+      questionText = `With reference to ${clean.substring(0, 60)}, which one of the following statements is correct?`;
       const correctOpt = mainSentence;
-      const optB = distractor1 !== mainSentence ? distractor1 : 'The process functions independently of system parameters.';
-      const optC = distractor2 !== mainSentence ? distractor2 : 'Alternative hypothesis unsupported by analytical evidence.';
-      const optD = 'Opposing operational condition contrary to logical premise.';
+      const optB = distractor1 !== mainSentence ? distractor1 : 'Process functions independently of institutional framework.';
+      const optC = 'Alternative hypothesis unsupported by academic empirical evidence.';
+      const optD = 'Opposing operational condition contrary to core exam logic.';
 
-      const rawOpts = [correctOpt, optB, optC, optD];
-      options = [...rawOpts];
-      // Deterministic shuffle
-      for (let j = options.length - 1; j > 0; j--) {
-        const k = (i + j) % (j + 1);
-        [options[j], options[k]] = [options[k], options[j]];
-      }
-      correctOptionIndex = options.indexOf(correctOpt);
+      options = [correctOpt, optB, optC, optD];
+      correctOptionIndex = 0;
     }
 
     questions.push({
       id: i + 1,
       question_text: questionText,
       options,
-      correct_option_index: correctOptionIndex >= 0 ? correctOptionIndex : 0,
-      explanation: `Verified statement from document: "${mainSentence}"`
+      correct_option_index: correctOptionIndex,
+      explanation: `Core academic concept regarding ${clean.substring(0, 70)}.`
     });
   }
 
   return {
-    quiz_title: 'UPSC Academic Concept & Logic Quiz',
+    quiz_title: clean.length > 50 ? `${clean.substring(0, 45)}... Quiz` : `Quiz: ${clean}`,
     questions
   };
 }
@@ -187,15 +176,15 @@ export async function generateQuizFromText(documentTextOrParams, questionCount =
   let key = apiKey;
 
   if (documentTextOrParams && typeof documentTextOrParams === 'object') {
-    documentText = documentTextOrParams.documentText || documentTextOrParams.text || '';
+    documentText = documentTextOrParams.documentText || documentTextOrParams.text || documentTextOrParams.topic || '';
     count = documentTextOrParams.questionCount || documentTextOrParams.numQuestions || questionCount;
     diff = documentTextOrParams.difficulty || difficulty;
     key = documentTextOrParams.apiKey || apiKey;
   }
 
-  const cleanText = preprocessDocumentText(documentText);
-  if (!cleanText || cleanText.length < 20) {
-    throw new Error('Not enough readable study text found in this document. Please ensure the file contains subject matter text.');
+  const cleanText = preprocessDocumentText(documentText) || (documentText || '').trim();
+  if (!cleanText || cleanText.length < 3) {
+    throw new Error('Please enter a valid topic command or subject text to generate a quiz.');
   }
 
   const finalApiKey = getActiveGeminiApiKey(key);
