@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Brain, Shield, User, Key, Sparkles, Sun, Moon, Eye, EyeOff, 
-  Check, X, ShieldAlert, Newspaper, Home, LogOut, BookOpen, Menu 
+  Check, X, ShieldAlert, Newspaper, Home, LogOut, BookOpen, Menu, MessageSquare, FileCheck 
 } from 'lucide-react';
 
 export function Navbar({ 
@@ -13,8 +13,6 @@ export function Navbar({
   const [apiKeyInput, setApiKeyInput] = useState(localStorage.getItem('GEMINI_API_KEY') || '');
   const [showPassword, setShowPassword] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-
-  const activeKey = localStorage.getItem('GEMINI_API_KEY') || import.meta.env.VITE_GEMINI_API_KEY;
 
   React.useEffect(() => {
     const handleKeyMissing = () => {
@@ -70,7 +68,7 @@ export function Navbar({
         {/* Main Workspace Nav Button */}
         <button
           className={`btn ${currentView === (userRole === 'student' ? 'student_join' : 'admin_dashboard') ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ fontSize: '0.85rem', padding: '0.5rem 0.9rem' }}
+          style={{ fontSize: '0.85rem', padding: '0.5rem 0.85rem' }}
           onClick={() => handleNavClick(userRole === 'student' ? 'student_join' : 'admin_dashboard')}
           title={userRole === 'student' ? 'Student Quiz Portal' : 'Admin Dashboard'}
         >
@@ -81,23 +79,45 @@ export function Navbar({
         {/* UPSC CSE Notes Sphere Nav Button */}
         <button
           className={`btn ${currentView === 'upsc_notes' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ fontSize: '0.85rem', padding: '0.5rem 0.9rem' }}
+          style={{ fontSize: '0.85rem', padding: '0.5rem 0.85rem' }}
           onClick={() => handleNavClick('upsc_notes')}
           title="UPSC CSE Notes Sphere"
         >
-          <BookOpen size={15} color={currentView === 'upsc_notes' ? '#ffffff' : 'var(--primary-violet)'} />
+          <BookOpen size={15} color={currentView === 'upsc_notes' ? '#ffffff' : '#f59e0b'} />
           <span>UPSC Notes</span>
         </button>
 
         {/* Current Affairs Sphere Nav Button */}
         <button
           className={`btn ${currentView === 'current_affairs' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ fontSize: '0.85rem', padding: '0.5rem 0.9rem' }}
+          style={{ fontSize: '0.85rem', padding: '0.5rem 0.85rem' }}
           onClick={() => handleNavClick('current_affairs')}
           title="Current Affairs Sphere"
         >
           <Newspaper size={15} color={currentView === 'current_affairs' ? '#ffffff' : 'var(--accent-cyan)'} />
           <span>Current Affairs</span>
+        </button>
+
+        {/* Community Chat Nav Button */}
+        <button
+          className={`btn ${currentView === 'community_chat' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ fontSize: '0.85rem', padding: '0.5rem 0.85rem' }}
+          onClick={() => handleNavClick('community_chat')}
+          title="Live Community Doubts Chat"
+        >
+          <MessageSquare size={15} color={currentView === 'community_chat' ? '#ffffff' : '#34d399'} />
+          <span>Doubts Chat</span>
+        </button>
+
+        {/* Copy Evaluation Nav Button */}
+        <button
+          className={`btn ${currentView === 'copy_evaluation' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ fontSize: '0.85rem', padding: '0.5rem 0.85rem' }}
+          onClick={() => handleNavClick('copy_evaluation')}
+          title="PRAYAS AI Copy Evaluation"
+        >
+          <FileCheck size={15} color={currentView === 'copy_evaluation' ? '#ffffff' : '#ec4899'} />
+          <span>Copy Eval</span>
         </button>
 
         {/* Day / Night Theme Switcher */}
@@ -114,7 +134,7 @@ export function Navbar({
         {userRole === 'admin' && (
           <button 
             className="btn btn-secondary" 
-            style={{ fontSize: '0.85rem', padding: '0.5rem 0.9rem' }}
+            style={{ fontSize: '0.85rem', padding: '0.5rem 0.85rem' }}
             onClick={() => setShowKeyModal(true)}
             title="Configure Quiz Engine Key"
           >
@@ -127,7 +147,7 @@ export function Navbar({
         {userRole === 'student' && isAuthenticated && (
           <button
             className="btn btn-secondary"
-            style={{ fontSize: '0.85rem', padding: '0.5rem 0.9rem', borderColor: 'rgba(99, 102, 241, 0.4)' }}
+            style={{ fontSize: '0.85rem', padding: '0.5rem 0.85rem', borderColor: 'rgba(99, 102, 241, 0.4)' }}
             onClick={onOpenProfile}
             title="View Student Profile & Stats"
           >
@@ -140,7 +160,7 @@ export function Navbar({
         {isAuthenticated && (
           <button
             className="btn btn-secondary"
-            style={{ fontSize: '0.85rem', padding: '0.5rem 0.9rem', borderColor: 'rgba(244, 63, 94, 0.4)' }}
+            style={{ fontSize: '0.85rem', padding: '0.5rem 0.85rem', borderColor: 'rgba(244, 63, 94, 0.4)' }}
             onClick={onLogout}
             title="Exit Session / Switch User"
           >
@@ -150,7 +170,7 @@ export function Navbar({
         )}
       </div>
 
-      {/* Mobile-Only Header Controls (Theme Switcher + Hamburger Toggle) */}
+      {/* Mobile Header Controls */}
       <div className="mobile-only-nav" style={{ display: 'none', alignItems: 'center', gap: '0.65rem' }}>
         <button
           className="btn btn-secondary"
@@ -169,7 +189,7 @@ export function Navbar({
         </button>
       </div>
 
-      {/* Mobile Drawer Navigation Menu Overlay */}
+      {/* Mobile Drawer Menu Overlay */}
       {mobileMenuOpen && (
         <div 
           className="mobile-nav-drawer glass-panel"
@@ -216,6 +236,24 @@ export function Navbar({
             <span>Current Affairs Sphere</span>
           </button>
 
+          <button
+            className={`btn ${currentView === 'community_chat' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ width: '100%', justifyContent: 'flex-start', padding: '0.75rem 1rem' }}
+            onClick={() => handleNavClick('community_chat')}
+          >
+            <MessageSquare size={18} color={currentView === 'community_chat' ? '#ffffff' : '#34d399'} />
+            <span>Community Doubts Chat</span>
+          </button>
+
+          <button
+            className={`btn ${currentView === 'copy_evaluation' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ width: '100%', justifyContent: 'flex-start', padding: '0.75rem 1rem' }}
+            onClick={() => handleNavClick('copy_evaluation')}
+          >
+            <FileCheck size={18} color={currentView === 'copy_evaluation' ? '#ffffff' : '#ec4899'} />
+            <span>PRAYAS AI Copy Evaluation</span>
+          </button>
+
           {userRole === 'student' && isAuthenticated && (
             <button
               className="btn btn-secondary"
@@ -260,11 +298,10 @@ export function Navbar({
         </div>
       )}
 
-      {/* Redesigned API Key Modal */}
+      {/* API Key Modal */}
       {showKeyModal && (
         <div className="modal-backdrop" onClick={() => setShowKeyModal(false)}>
           <div className="modal-card" onClick={e => e.stopPropagation()}>
-            
             <button 
               onClick={() => setShowKeyModal(false)}
               style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
@@ -334,7 +371,6 @@ export function Navbar({
                 </button>
               </div>
             </form>
-
           </div>
         </div>
       )}

@@ -85,11 +85,45 @@ async function getAttemptsForQuiz(quizId) {
   });
 }
 
+/**
+ * Retrieves community chat messages.
+ */
+async function getChatMessages() {
+  const db = await readDb();
+  if (!db.chatMessages) {
+    db.chatMessages = [
+      {
+        id: 'msg-1',
+        senderName: 'Anish Manhotra (UPSC Faculty)',
+        senderRole: 'admin',
+        messageText: 'Welcome to QuizMind Community Doubts Chat! Feel free to ask any syllabus questions, doubt clarifications, or exam strategy queries here.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ];
+    await writeDb(db);
+  }
+  return db.chatMessages;
+}
+
+/**
+ * Saves a new community chat message.
+ */
+async function saveChatMessage(msg) {
+  const db = await readDb();
+  if (!db.chatMessages) db.chatMessages = [];
+  db.chatMessages.push(msg);
+  await writeDb(db);
+  return msg;
+}
+
 module.exports = {
   getQuizzes,
   saveQuiz,
   getQuizByAccessCode,
   getQuestionsForQuiz,
   saveAttempt,
-  getAttemptsForQuiz
+  getAttemptsForQuiz,
+  getChatMessages,
+  saveChatMessage
 };
+

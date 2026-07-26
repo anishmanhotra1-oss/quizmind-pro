@@ -9,43 +9,73 @@ import { QuizWorkspace } from './components/student/QuizWorkspace';
 import { LeaderboardView } from './components/leaderboard/LeaderboardView';
 import { CurrentAffairs } from './components/current_affairs/CurrentAffairs';
 import { NotesSphere } from './components/notes/NotesSphere';
+import { CommunityChat } from './components/chat/CommunityChat';
+import { CopyEvaluation } from './components/evaluation/CopyEvaluation';
 import { StudentProfileModal } from './components/student/StudentProfileModal';
 import { updateStudentStats } from './services/student_service';
 import './styles/main.css';
 
+// Persistent storage helper (localStorage with fallback)
+const getStorageItem = (key, defaultVal) => {
+  try {
+    return localStorage.getItem(key) || sessionStorage.getItem(key) || defaultVal;
+  } catch (e) {
+    return defaultVal;
+  }
+};
+
+const setStorageItem = (key, val) => {
+  try {
+    localStorage.setItem(key, val);
+    sessionStorage.setItem(key, val);
+  } catch (e) {}
+};
+
+const removeStorageItem = (key) => {
+  try {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  } catch (e) {}
+};
+
 export default function App() {
-  // Authentication & Session Persistence
-  const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('QUIZMIND_AUTH') === 'true');
-  const [userRole, setUserRole] = useState(() => sessionStorage.getItem('QUIZMIND_ROLE') || 'student'); // 'admin' | 'student'
-  const [studentName, setStudentName] = useState(() => sessionStorage.getItem('QUIZMIND_STUDENT_NAME') || '');
-  const [studentEmail, setStudentEmail] = useState(() => sessionStorage.getItem('QUIZMIND_STUDENT_EMAIL') || '');
+  // Authentication & Persistent Session Management (Task 4)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => getStorageItem('QUIZMIND_AUTH', 'false') === 'true');
+  const [userRole, setUserRole] = useState(() => getStorageItem('QUIZMIND_ROLE', 'student')); // 'admin' | 'student'
+  const [studentName, setStudentName] = useState(() => getStorageItem('QUIZMIND_STUDENT_NAME', ''));
+  const [studentEmail, setStudentEmail] = useState(() => getStorageItem('QUIZMIND_STUDENT_EMAIL', ''));
   const [showProfileModal, setShowProfileModal] = useState(false);
   
   const [viewState, setViewState] = useState(() => {
-    const savedRole = sessionStorage.getItem('QUIZMIND_ROLE');
-    const savedView = sessionStorage.getItem('QUIZMIND_VIEW');
-    if (savedRole === 'student') return (savedView === 'current_affairs' || savedView === 'upsc_notes') ? savedView : 'student_join';
+    const savedRole = getStorageItem('QUIZMIND_ROLE', 'student');
+    const savedView = getStorageItem('QUIZMIND_VIEW', '');
+    if (savedRole === 'student') {
+      if (['current_affairs', 'upsc_notes', 'community_chat', 'copy_evaluation', 'student_join', 'home'].includes(savedView)) {
+        return savedView;
+      }
+      return 'student_join';
+    }
     if (savedRole === 'admin') return savedView || 'admin_dashboard';
     return 'home';
   });
 
   const setView = (newView) => {
     let finalView = newView;
-    const currentRole = sessionStorage.getItem('QUIZMIND_ROLE') || userRole;
+    const currentRole = getStorageItem('QUIZMIND_ROLE', userRole);
     if (currentRole === 'student' && (newView === 'admin_dashboard' || newView === 'home')) {
       finalView = 'student_join';
     }
-    sessionStorage.setItem('QUIZMIND_VIEW', finalView);
+    setStorageItem('QUIZMIND_VIEW', finalView);
     setViewState(finalView);
   };
 
   const view = viewState;
 
-  const [theme, setTheme] = useState(localStorage.getItem('QUIZMIND_THEME') || 'dark');
+  const [theme, setTheme] = useState(() => localStorage.getItem('QUIZMIND_THEME') || 'dark');
   
   // Quiz Active State
-  const [activeQuizSession, setActiveQuizSession] = useState(null); // { quiz, questions, studentName }
-  const [lastAttemptResult, setLastAttemptResult] = useState(null); // Score metrics & user answers
+  const [activeQuizSession, setActiveQuizSession] = useState(null);
+  const [lastAttemptResult, setLastAttemptResult] = useState(null);
   const [selectedLeaderboardQuiz, setSelectedLeaderboardQuiz] = useState(null);
 
   useEffect(() => {
@@ -59,10 +89,10 @@ export default function App() {
 
   // Student Authentication Handler
   const handleStudentLogin = (name, email) => {
-    sessionStorage.setItem('QUIZMIND_AUTH', 'true');
-    sessionStorage.setItem('QUIZMIND_ROLE', 'student');
-    sessionStorage.setItem('QUIZMIND_STUDENT_NAME', name);
-    if (email) sessionStorage.setItem('QUIZMIND_STUDENT_EMAIL', email);
+    setStorageItem('QUIZMIND_AUTH', 'true');
+    setStorageItem('QUIZMIND_ROLE', 'student');
+    setStorageItem('QUIZMIND_STUDENT_NAME', name);
+    if (email) setStorageItem('QUIZMIND_STUDENT_EMAIL', email);
     
     setStudentName(name);
     if (email) setStudentEmail(email);
@@ -71,10 +101,10 @@ export default function App() {
     setView('student_join');
   };
 
-  // Admin Password Protection Authentication Handler (manhotra@66AM)
+  // Admin Password Protection Handler
   const handleAdminLogin = () => {
-    sessionStorage.setItem('QUIZMIND_AUTH', 'true');
-    sessionStorage.setItem('QUIZMIND_ROLE', 'admin');
+    setStorageItem('QUIZMIND_AUTH', 'true');
+    setStorageItem('QUIZMIND_ROLE', 'admin');
     
     setUserRole('admin');
     setIsAuthenticated(true);
@@ -83,11 +113,11 @@ export default function App() {
 
   // Logout / Switch User
   const handleLogout = () => {
-    sessionStorage.removeItem('QUIZMIND_AUTH');
-    sessionStorage.removeItem('QUIZMIND_ROLE');
-    sessionStorage.removeItem('QUIZMIND_STUDENT_NAME');
-    sessionStorage.removeItem('QUIZMIND_STUDENT_EMAIL');
-    sessionStorage.removeItem('QUIZMIND_VIEW');
+    removeStorageItem('QUIZMIND_AUTH');
+    removeStorageItem('QUIZMIND_ROLE');
+    removeStorageItem('QUIZMIND_STUDENT_NAME');
+    removeStorageItem('QUIZMIND_STUDENT_EMAIL');
+    removeStorageItem('QUIZMIND_VIEW');
     
     setIsAuthenticated(false);
     setUserRole('student');
@@ -116,7 +146,7 @@ export default function App() {
   // Admin clicks View Leaderboard on active quiz card
   const handleSelectQuizForLeaderboard = (quiz) => {
     setSelectedLeaderboardQuiz(quiz);
-    setLastAttemptResult(null); // Viewing pure leaderboard without recent student attempt
+    setLastAttemptResult(null);
     setView('leaderboard');
   };
 
@@ -147,7 +177,7 @@ export default function App() {
               <HomePage
                 onNavigate={(newView) => {
                   if (newView === 'admin_dashboard' && userRole !== 'admin') {
-                    handleLogout(); // Prompt admin password if student tries to navigate to admin dashboard
+                    handleLogout();
                   } else {
                     setView(newView);
                   }
@@ -191,6 +221,7 @@ export default function App() {
 
             {view === 'current_affairs' && (
               <CurrentAffairs
+                userRole={userRole}
                 onGenerateQuizFromArticle={(article) => {
                   if (userRole === 'admin') {
                     setView('admin_dashboard');
@@ -229,6 +260,21 @@ export default function App() {
                     alert('Quiz creation from notes is reserved for authenticated Instructors/Admins.');
                   }
                 }}
+              />
+            )}
+
+            {view === 'community_chat' && (
+              <CommunityChat
+                userRole={userRole}
+                studentName={studentName}
+                onBackToDashboard={() => setView(userRole === 'admin' ? 'admin_dashboard' : 'student_join')}
+              />
+            )}
+
+            {view === 'copy_evaluation' && (
+              <CopyEvaluation
+                userRole={userRole}
+                onBackToDashboard={() => setView(userRole === 'admin' ? 'admin_dashboard' : 'student_join')}
               />
             )}
 

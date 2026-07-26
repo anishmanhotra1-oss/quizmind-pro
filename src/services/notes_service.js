@@ -261,3 +261,60 @@ export function deleteUPSCNote(noteId) {
   saveUPSCNotes(updated);
   return updated;
 }
+
+// Notes Document Attachments Storage & Management
+const STORAGE_KEY_NOTES_DOCS = 'QUIZMIND_NOTES_DOCUMENTS';
+
+export function getNotesDocuments() {
+  const saved = localStorage.getItem(STORAGE_KEY_NOTES_DOCS);
+  if (saved) {
+    try { return JSON.parse(saved); } catch (e) {}
+  }
+  return [
+    {
+      id: 'notes-doc-1',
+      title: 'UPSC Polity Constitutional Amendments (1st to 106th) Handout PDF',
+      subject: 'polity',
+      fileType: 'pdf',
+      fileSize: '1.8 MB',
+      uploadDate: new Date().toISOString().split('T')[0],
+      fileData: 'DATA_EMBEDDED',
+      uploadedBy: 'Anish Manhotra (UPSC Panel)'
+    },
+    {
+      id: 'notes-doc-2',
+      title: 'GS Paper III Economy Key Formulas & Macro Data Cheat Sheet',
+      subject: 'economy',
+      fileType: 'pdf',
+      fileSize: '1.2 MB',
+      uploadDate: new Date().toISOString().split('T')[0],
+      fileData: 'DATA_EMBEDDED',
+      uploadedBy: 'Faculty Wing'
+    }
+  ];
+}
+
+export function addNotesDocument(doc) {
+  const current = getNotesDocuments();
+  const newDoc = {
+    id: 'notes-doc-' + Date.now(),
+    title: doc.title,
+    subject: doc.subject || 'all',
+    fileType: doc.fileType || 'pdf',
+    fileSize: doc.fileSize || '1.5 MB',
+    uploadDate: new Date().toISOString().split('T')[0],
+    fileData: doc.fileData || '',
+    uploadedBy: doc.uploadedBy || 'Admin Panel'
+  };
+  const updated = [newDoc, ...current];
+  localStorage.setItem(STORAGE_KEY_NOTES_DOCS, JSON.stringify(updated));
+  return newDoc;
+}
+
+export function deleteNotesDocument(docId) {
+  const current = getNotesDocuments();
+  const updated = current.filter(d => d.id !== docId);
+  localStorage.setItem(STORAGE_KEY_NOTES_DOCS, JSON.stringify(updated));
+  return updated;
+}
+
