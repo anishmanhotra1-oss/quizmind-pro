@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LogIn, KeyRound, User, Sparkles, AlertCircle, Play, BookOpen, Bookmark, ArrowRight } from 'lucide-react';
 import { fetchQuizByAccessCode, fetchQuestionsForQuiz, fetchAdminQuizzes } from '../../services/supabase';
 import { getUPSCNotes, UPSC_SUBJECTS } from '../../services/notes_service';
+import { registerStudentAccount } from '../../services/student_service';
 
 export function StudentJoin({ onStartQuiz, defaultStudentName }) {
   const [accessCode, setAccessCode] = useState('');
@@ -31,6 +32,8 @@ export function StudentJoin({ onStartQuiz, defaultStudentName }) {
     setErrorMsg('');
 
     try {
+      registerStudentAccount({ name: studentName.trim() });
+
       const quiz = await fetchQuizByAccessCode(cleanCode);
       const questions = await fetchQuestionsForQuiz(quiz.id);
 

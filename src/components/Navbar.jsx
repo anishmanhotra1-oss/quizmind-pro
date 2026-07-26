@@ -114,10 +114,10 @@ export function Navbar({
           className={`btn ${currentView === 'copy_evaluation' ? 'btn-primary' : 'btn-secondary'}`}
           style={{ fontSize: '0.85rem', padding: '0.5rem 0.85rem' }}
           onClick={() => handleNavClick('copy_evaluation')}
-          title="PRAYAS AI Copy Evaluation"
+          title="Artha AI Copy Evaluation"
         >
           <FileCheck size={15} color={currentView === 'copy_evaluation' ? '#ffffff' : '#ec4899'} />
-          <span>Copy Eval</span>
+          <span>Artha AI</span>
         </button>
 
         {/* Day / Night Theme Switcher */}
@@ -251,7 +251,7 @@ export function Navbar({
             onClick={() => handleNavClick('copy_evaluation')}
           >
             <FileCheck size={18} color={currentView === 'copy_evaluation' ? '#ffffff' : '#ec4899'} />
-            <span>PRAYAS AI Copy Evaluation</span>
+            <span>Artha AI Copy Evaluation</span>
           </button>
 
           {userRole === 'student' && isAuthenticated && (

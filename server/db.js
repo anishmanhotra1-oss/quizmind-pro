@@ -116,6 +116,104 @@ async function saveChatMessage(msg) {
   return msg;
 }
 
+/**
+ * Retrieves registered student roster from database.
+ */
+async function getStudents() {
+  const db = await readDb();
+  if (!db.students) {
+    db.students = [
+      {
+        id: 'std-101',
+        name: 'Alex Morgan',
+        email: 'alex.morgan@student.edu',
+        joinedDate: '2026-07-20',
+        device: 'Desktop / Chrome',
+        attemptsCount: 3,
+        avgScore: 88
+      },
+      {
+        id: 'std-102',
+        name: 'Jordan Miller',
+        email: 'jordan.m@student.edu',
+        joinedDate: '2026-07-22',
+        device: 'Mobile / Safari',
+        attemptsCount: 2,
+        avgScore: 75
+      },
+      {
+        id: 'std-103',
+        name: 'Priya Sharma',
+        email: 'priya.sharma@upsc.org',
+        joinedDate: '2026-07-24',
+        device: 'Tablet / Chrome',
+        attemptsCount: 5,
+        avgScore: 94
+      }
+    ];
+    await writeDb(db);
+  }
+  return db.students.sort((a, b) => new Date(b.joinedDate) - new Date(a.joinedDate));
+}
+
+/**
+ * Registers or updates a student account in database.
+ */
+async function saveStudent(studentData) {
+  const db = await readDb();
+  if (!db.students) db.students = [];
+
+  const cleanName = studentData.name.trim();
+  const cleanEmail = studentData.email && studentData.email.trim()
+    ? studentData.email.trim()
+    : `${cleanName.toLowerCase().replace(/\s+/g, '.')}@student.edu`;
+
+  const existingIndex = db.students.findIndex(s => s.name.toLowerCase() === cleanName.toLowerCase() || s.email.toLowerCase() === cleanEmail.toLowerCase());
+
+  if (existingIndex !== -1) {
+    db.students[existingIndex] = {
+      ...db.students[existingIndex],
+      lastLogin: new Date().toISOString(),
+      device: studentData.device || db.students[existingIndex].device || 'Web Client'
+    };
+    await writeDb(db);
+    return db.students[existingIndex];
+  }
+
+  const newStudent = {
+    id: 'std-' + Date.now().toString().slice(-4),
+    name: cleanName,
+    email: cleanEmail,
+    joinedDate: new Date().toISOString().split('T')[0],
+    lastLogin: new Date().toISOString(),
+    device: studentData.device || 'Web Client',
+    attemptsCount: 0,
+    avgScore: 0
+  };
+
+  db.students.unshift(newStudent);
+  await writeDb(db);
+  return newStudent;
+}
+
+/**
+ * Updates student score stats in database after test completion.
+ */
+async function updateStudentStatsInDB(studentName, newScorePercentage) {
+  const db = await readDb();
+  if (!db.students) return;
+
+  const std = db.students.find(s => s.name.toLowerCase() === studentName.toLowerCase());
+  if (std) {
+    const attempts = (std.attemptsCount || 0) + 1;
+    const currentAvg = std.avgScore || 0;
+    const newAvg = Math.round(((currentAvg * (attempts - 1)) + newScorePercentage) / attempts);
+    std.attemptsCount = attempts;
+    std.avgScore = newAvg;
+    await writeDb(db);
+  }
+}
+
 module.exports = {
   getQuizzes,
   saveQuiz,
@@ -124,6 +222,10 @@ module.exports = {
   saveAttempt,
   getAttemptsForQuiz,
   getChatMessages,
-  saveChatMessage
+  saveChatMessage,
+  getStudents,
+  saveStudent,
+  updateStudentStatsInDB
 };
+
 

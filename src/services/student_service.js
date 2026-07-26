@@ -1,4 +1,4 @@
-// QuizMind Pro - Student Account Management & Registration Service
+// QuizMind Pro - Student Account Management & Registration Service (Server Sync + Local Storage)
 
 const INITIAL_STUDENTS = [
   {
@@ -6,6 +6,7 @@ const INITIAL_STUDENTS = [
     name: 'Alex Morgan',
     email: 'alex.morgan@student.edu',
     joinedDate: '2026-07-20',
+    device: 'Desktop / Chrome',
     attemptsCount: 3,
     avgScore: 88
   },
@@ -14,6 +15,7 @@ const INITIAL_STUDENTS = [
     name: 'Jordan Miller',
     email: 'jordan.m@student.edu',
     joinedDate: '2026-07-22',
+    device: 'Mobile / Safari',
     attemptsCount: 2,
     avgScore: 75
   },
@@ -22,10 +24,24 @@ const INITIAL_STUDENTS = [
     name: 'Priya Sharma',
     email: 'priya.sharma@upsc.org',
     joinedDate: '2026-07-24',
+    device: 'Tablet / Chrome',
     attemptsCount: 5,
     avgScore: 94
   }
 ];
+
+export async function fetchLiveRegisteredStudents() {
+  try {
+    const res = await fetch('/api/students');
+    if (res.ok) {
+      const serverStudents = await res.json();
+      localStorage.setItem('QUIZMIND_STUDENTS', JSON.stringify(serverStudents));
+      return serverStudents;
+    }
+  } catch (e) {}
+
+  return getRegisteredStudents();
+}
 
 export function getRegisteredStudents() {
   const saved = localStorage.getItem('QUIZMIND_STUDENTS');
@@ -39,29 +55,48 @@ export function getRegisteredStudents() {
   return INITIAL_STUDENTS;
 }
 
-export function registerStudentAccount({ name, email }) {
-  const students = getRegisteredStudents();
+export async function registerStudentAccount({ name, email, device }) {
   const cleanName = name.trim();
   const cleanEmail = (email && email.trim()) ? email.trim() : `${cleanName.toLowerCase().replace(/\s+/g, '.')}@student.edu`;
   
-  // Check if student already exists
+  // Local registration
+  const students = getRegisteredStudents();
   const existing = students.find(s => s.name.toLowerCase() === cleanName.toLowerCase() || s.email.toLowerCase() === cleanEmail.toLowerCase());
   
-  if (existing) {
-    return existing;
+  let newStudent = existing;
+  if (!existing) {
+    newStudent = {
+      id: 'std-' + (Date.now().toString().slice(-4)),
+      name: cleanName,
+      email: cleanEmail,
+      joinedDate: new Date().toISOString().split('T')[0],
+      device: device || (window.innerWidth <= 768 ? 'Mobile Phone' : 'Desktop PC'),
+      attemptsCount: 0,
+      avgScore: 0
+    };
+    const updated = [newStudent, ...students];
+    localStorage.setItem('QUIZMIND_STUDENTS', JSON.stringify(updated));
   }
 
-  const newStudent = {
-    id: 'std-' + (Date.now().toString().slice(-4)),
-    name: cleanName,
-    email: cleanEmail,
-    joinedDate: new Date().toISOString().split('T')[0],
-    attemptsCount: 0,
-    avgScore: 0
-  };
+  // Server sync for global Admin Dashboard auto-update from any device
+  try {
+    const res = await fetch('/api/students/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: cleanName,
+        email: cleanEmail,
+        device: device || (window.innerWidth <= 768 ? 'Mobile Phone' : 'Desktop PC')
+      })
+    });
+    if (res.ok) {
+      const serverRegistered = await res.json();
+      return serverRegistered;
+    }
+  } catch (e) {
+    console.warn('Backend server unavailable, registered locally.');
+  }
 
-  const updated = [newStudent, ...students];
-  localStorage.setItem('QUIZMIND_STUDENTS', JSON.stringify(updated));
   return newStudent;
 }
 

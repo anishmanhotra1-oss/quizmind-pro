@@ -40,6 +40,12 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
   const [docFileType, setDocFileType] = useState('pdf');
   const [docContentText, setDocContentText] = useState('');
 
+  // Native File Picker state
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFileData, setSelectedFileData] = useState('');
+  const [selectedFileName, setSelectedFileName] = useState('');
+  const [selectedFileSize, setSelectedFileSize] = useState('');
+
   // Admin Add Article Modal state
   const [showAddArticleModal, setShowAddArticleModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -145,21 +151,66 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
     }
   };
 
+  // Native File Picker handler for mobile & desktop
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+    setSelectedFileName(file.name);
+
+    // Format size
+    const sizeMB = file.size / (1024 * 1024);
+    const formattedSize = sizeMB >= 1 
+      ? `${sizeMB.toFixed(1)} MB` 
+      : `${Math.round(file.size / 1024)} KB`;
+    setSelectedFileSize(formattedSize);
+
+    // Auto extension
+    const ext = file.name.split('.').pop().toLowerCase();
+    setDocFileType(ext);
+
+    // Auto title if empty
+    if (!docTitle || docTitle.trim() === '') {
+      const titleWithoutExt = file.name.replace(/\.[^/.]+$/, "").replace(/_/g, ' ');
+      setDocTitle(titleWithoutExt);
+    }
+
+    // Read Base64 Data URL for binary/text files
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setSelectedFileData(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleAddDocument = (e) => {
     e.preventDefault();
     if (!docTitle.trim()) {
-      alert('Please enter a document title.');
+      alert('Please enter or select a document file.');
       return;
     }
+    if (!selectedFile && !docContentText.trim()) {
+      alert('Please select a document file from your device or enter document text.');
+      return;
+    }
+
     addCADocument({
       title: docTitle.trim(),
       category: docCategory,
-      fileType: docFileType,
-      fileSize: `${Math.floor(Math.random() * 3 + 1)}.${Math.floor(Math.random() * 9)} MB`,
-      fileData: docContentText.trim()
+      fileType: docFileType || 'pdf',
+      fileSize: selectedFileSize || '1.4 MB',
+      fileData: selectedFileData || docContentText.trim(),
+      fileName: selectedFileName || `${docTitle}.${docFileType || 'pdf'}`,
+      uploadedBy: userRole === 'admin' ? 'UPSC Admin Faculty' : 'Faculty Panel'
     });
+
     setDocTitle('');
     setDocContentText('');
+    setSelectedFile(null);
+    setSelectedFileData('');
+    setSelectedFileName('');
+    setSelectedFileSize('');
     setShowDocUploadModal(false);
     loadDocuments();
   };
@@ -174,12 +225,17 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
 
   const handleDownloadDoc = (doc) => {
     const element = document.createElement('a');
-    const content = doc.fileData && doc.fileData !== 'DATA_EMBEDDED'
-      ? doc.fileData
-      : `QuizMind Current Affairs Attachment: ${doc.title}\nCategory: ${doc.category}\nUpload Date: ${doc.uploadDate}\nUploaded By: ${doc.uploadedBy}`;
-    const blob = new Blob([content], { type: 'text/plain' });
-    element.href = URL.createObjectURL(blob);
-    element.download = `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'txt'}`;
+    if (doc.fileData && doc.fileData.startsWith('data:')) {
+      element.href = doc.fileData;
+      element.download = doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'pdf'}`;
+    } else {
+      const content = doc.fileData && doc.fileData !== 'DATA_EMBEDDED'
+        ? doc.fileData
+        : `QuizMind Current Affairs Attachment: ${doc.title}\nCategory: ${doc.category}\nUpload Date: ${doc.uploadDate}\nUploaded By: ${doc.uploadedBy}`;
+      const blob = new Blob([content], { type: 'text/plain' });
+      element.href = URL.createObjectURL(blob);
+      element.download = doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'txt'}`;
+    }
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -221,7 +277,6 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
     }
   };
 
-  // Safe highlights extractor
   const getArticleHighlights = (article) => {
     if (article.highlights && Array.isArray(article.highlights) && article.highlights.length > 0) {
       return article.highlights;
@@ -282,7 +337,6 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {/* Manual Refresh News Button */}
             <button 
               className="btn btn-secondary" 
               onClick={handleManualRefresh}
@@ -294,7 +348,6 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
               <span>{isRefreshing ? 'Refreshing...' : 'Refresh News'}</span>
             </button>
 
-            {/* Admin Add Article Button */}
             {userRole === 'admin' && (
               <button 
                 className="btn btn-primary" 
@@ -442,7 +495,7 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
                       fontWeight: 800,
                       textTransform: 'uppercase'
                     }}>
-                      {doc.fileType || 'PDF'} • {doc.fileSize || 'DOC'}
+                      {doc.fileType || 'PDF'} • {doc.fileSize || 'FILE'}
                     </span>
 
                     {userRole === 'admin' && (
@@ -767,10 +820,10 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
         </div>
       )}
 
-      {/* Admin Upload Document Modal */}
+      {/* Admin Upload Document Modal with Native Device File Input */}
       {showDocUploadModal && (
         <div className="modal-backdrop" onClick={() => setShowDocUploadModal(false)}>
-          <div className="modal-card" style={{ maxWidth: '580px' }} onClick={e => e.stopPropagation()}>
+          <div className="modal-card" style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
             <button 
               onClick={() => setShowDocUploadModal(false)}
               style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
@@ -779,17 +832,46 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <Upload size={22} color="var(--primary-indigo)" />
+              <Upload size={24} color="var(--primary-indigo)" />
               <h3>Upload Current Affairs Document Attachment</h3>
             </div>
 
             <form onSubmit={handleAddDocument}>
+              
+              {/* Native File Input Picker Box */}
+              <div className="input-group">
+                <label className="input-label">Select Document File from Computer or Mobile</label>
+                <div style={{ 
+                  border: '2px dashed var(--border-indigo)', 
+                  borderRadius: 'var(--radius-md)', 
+                  padding: '1.25rem', 
+                  textAlign: 'center', 
+                  background: 'rgba(99, 102, 241, 0.05)'
+                }}>
+                  <Upload size={28} color="var(--primary-indigo)" style={{ marginBottom: '0.5rem' }} />
+                  <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+                    {selectedFileName ? `File Selected: ${selectedFileName}` : 'Choose PDF, DOCX, or TXT file'}
+                  </div>
+                  {selectedFileSize && (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--accent-emerald)', fontWeight: 700, marginBottom: '0.5rem' }}>
+                      Size: {selectedFileSize} • Extension: .{docFileType}
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.doc,.txt,.ppt,.pptx"
+                    onChange={handleFileSelect}
+                    style={{ width: '100%', marginTop: '0.35rem', fontSize: '0.85rem', cursor: 'pointer' }}
+                  />
+                </div>
+              </div>
+
               <div className="input-group">
                 <label className="input-label">Document Title</label>
                 <input
                   type="text"
                   className="custom-input"
-                  placeholder="e.g. Budget 2026 Key Takeaways Summary PDF"
+                  placeholder="e.g. Economic Survey 2026 Key Takeaways Summary"
                   value={docTitle}
                   onChange={e => setDocTitle(e.target.value)}
                   required
@@ -825,11 +907,11 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
               </div>
 
               <div className="input-group">
-                <label className="input-label">Document Text Content / Download Body</label>
+                <label className="input-label">Optional Text Notes / Summary Description</label>
                 <textarea
                   className="custom-textarea"
-                  style={{ height: '130px', fontFamily: 'monospace', fontSize: '0.85rem' }}
-                  placeholder="Enter text or paste document notes content for students to download..."
+                  style={{ height: '90px', fontFamily: 'monospace', fontSize: '0.85rem' }}
+                  placeholder="Additional notes summary for students..."
                   value={docContentText}
                   onChange={e => setDocContentText(e.target.value)}
                 />
@@ -840,7 +922,7 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Upload Document
+                  Upload & Publish File 🚀
                 </button>
               </div>
             </form>

@@ -12,7 +12,7 @@ import { NotesSphere } from './components/notes/NotesSphere';
 import { CommunityChat } from './components/chat/CommunityChat';
 import { CopyEvaluation } from './components/evaluation/CopyEvaluation';
 import { StudentProfileModal } from './components/student/StudentProfileModal';
-import { updateStudentStats } from './services/student_service';
+import { updateStudentStats, registerStudentAccount } from './services/student_service';
 import './styles/main.css';
 
 // Persistent storage helper (localStorage with fallback)
@@ -89,6 +89,8 @@ export default function App() {
 
   // Student Authentication Handler
   const handleStudentLogin = (name, email) => {
+    registerStudentAccount({ name, email });
+
     setStorageItem('QUIZMIND_AUTH', 'true');
     setStorageItem('QUIZMIND_ROLE', 'student');
     setStorageItem('QUIZMIND_STUDENT_NAME', name);

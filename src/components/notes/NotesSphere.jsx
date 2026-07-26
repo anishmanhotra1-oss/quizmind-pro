@@ -34,6 +34,12 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
   const [docFileType, setDocFileType] = useState('pdf');
   const [docContentText, setDocContentText] = useState('');
 
+  // Native File Picker State
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFileData, setSelectedFileData] = useState('');
+  const [selectedFileName, setSelectedFileName] = useState('');
+  const [selectedFileSize, setSelectedFileSize] = useState('');
+
   useEffect(() => {
     loadNotes();
     loadDocuments();
@@ -79,24 +85,66 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
     }
   };
 
+  // Native File Picker Handler
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setSelectedFile(file);
+    setSelectedFileName(file.name);
+
+    // Format size
+    const sizeMB = file.size / (1024 * 1024);
+    const formattedSize = sizeMB >= 1 
+      ? `${sizeMB.toFixed(1)} MB` 
+      : `${Math.round(file.size / 1024)} KB`;
+    setSelectedFileSize(formattedSize);
+
+    // Auto extension
+    const ext = file.name.split('.').pop().toLowerCase();
+    setDocFileType(ext);
+
+    // Auto title if empty
+    if (!docTitle || docTitle.trim() === '') {
+      const titleWithoutExt = file.name.replace(/\.[^/.]+$/, "").replace(/_/g, ' ');
+      setDocTitle(titleWithoutExt);
+    }
+
+    // Read Base64 Data URL
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setSelectedFileData(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleCreateDocument = (e) => {
     e.preventDefault();
     if (!docTitle.trim()) {
-      alert('Please enter a document title.');
+      alert('Please enter or select a document file.');
+      return;
+    }
+    if (!selectedFile && !docContentText.trim()) {
+      alert('Please select a document file from your device or enter notes content.');
       return;
     }
 
     addNotesDocument({
       title: docTitle.trim(),
       subject: docSubject,
-      fileType: docFileType,
-      fileSize: `${Math.floor(Math.random() * 2 + 1)}.${Math.floor(Math.random() * 9)} MB`,
-      fileData: docContentText.trim(),
+      fileType: docFileType || 'pdf',
+      fileSize: selectedFileSize || '1.5 MB',
+      fileData: selectedFileData || docContentText.trim(),
+      fileName: selectedFileName || `${docTitle}.${docFileType || 'pdf'}`,
       uploadedBy: userRole === 'admin' ? 'UPSC Admin Faculty' : 'Faculty Panel'
     });
 
     setDocTitle('');
     setDocContentText('');
+    setSelectedFile(null);
+    setSelectedFileData('');
+    setSelectedFileName('');
+    setSelectedFileSize('');
     setShowDocUploadModal(false);
     loadDocuments();
   };
@@ -111,12 +159,17 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
 
   const handleDownloadDoc = (doc) => {
     const element = document.createElement('a');
-    const content = doc.fileData && doc.fileData !== 'DATA_EMBEDDED'
-      ? doc.fileData
-      : `QuizMind UPSC Study Material Attachment: ${doc.title}\nSubject: ${doc.subject}\nDate: ${doc.uploadDate}\nAuthor: ${doc.uploadedBy}`;
-    const blob = new Blob([content], { type: 'text/plain' });
-    element.href = URL.createObjectURL(blob);
-    element.download = `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'txt'}`;
+    if (doc.fileData && doc.fileData.startsWith('data:')) {
+      element.href = doc.fileData;
+      element.download = doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'pdf'}`;
+    } else {
+      const content = doc.fileData && doc.fileData !== 'DATA_EMBEDDED'
+        ? doc.fileData
+        : `QuizMind UPSC Study Material Attachment: ${doc.title}\nSubject: ${doc.subject}\nDate: ${doc.uploadDate}\nAuthor: ${doc.uploadedBy}`;
+      const blob = new Blob([content], { type: 'text/plain' });
+      element.href = URL.createObjectURL(blob);
+      element.download = doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'txt'}`;
+    }
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -702,10 +755,10 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
         </div>
       )}
 
-      {/* Admin Upload Document Modal */}
+      {/* Admin Upload Document Modal with Native Device File Input */}
       {showDocUploadModal && (
         <div className="modal-backdrop" onClick={() => setShowDocUploadModal(false)}>
-          <div className="modal-card" style={{ maxWidth: '580px' }} onClick={e => e.stopPropagation()}>
+          <div className="modal-card" style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
             <button 
               onClick={() => setShowDocUploadModal(false)}
               style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
@@ -719,6 +772,35 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
             </div>
 
             <form onSubmit={handleCreateDocument}>
+              
+              {/* Native File Input Picker Box */}
+              <div className="input-group">
+                <label className="input-label">Select Document File from Computer or Mobile</label>
+                <div style={{ 
+                  border: '2px dashed rgba(245, 158, 11, 0.4)', 
+                  borderRadius: 'var(--radius-md)', 
+                  padding: '1.25rem', 
+                  textAlign: 'center', 
+                  background: 'rgba(245, 158, 11, 0.05)'
+                }}>
+                  <Upload size={28} color="#f59e0b" style={{ marginBottom: '0.5rem' }} />
+                  <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
+                    {selectedFileName ? `File Selected: ${selectedFileName}` : 'Choose PDF, DOCX, or TXT file'}
+                  </div>
+                  {selectedFileSize && (
+                    <div style={{ fontSize: '0.78rem', color: '#f59e0b', fontWeight: 700, marginBottom: '0.5rem' }}>
+                      Size: {selectedFileSize} • Extension: .{docFileType}
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,.doc,.txt,.ppt,.pptx"
+                    onChange={handleFileSelect}
+                    style={{ width: '100%', marginTop: '0.35rem', fontSize: '0.85rem', cursor: 'pointer' }}
+                  />
+                </div>
+              </div>
+
               <div className="input-group">
                 <label className="input-label">Document Title</label>
                 <input
@@ -760,11 +842,11 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
               </div>
 
               <div className="input-group">
-                <label className="input-label">Document Content / Text File Body</label>
+                <label className="input-label">Optional Content / Text File Body</label>
                 <textarea
                   className="custom-textarea"
-                  style={{ height: '130px', fontFamily: 'monospace', fontSize: '0.85rem' }}
-                  placeholder="Enter notes summary text or paste content for student downloads..."
+                  style={{ height: '90px', fontFamily: 'monospace', fontSize: '0.85rem' }}
+                  placeholder="Additional summary text for students..."
                   value={docContentText}
                   onChange={e => setDocContentText(e.target.value)}
                 />
@@ -775,7 +857,7 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ background: 'linear-gradient(135deg, #d97706, #7c3aed)', border: 'none' }}>
-                  Upload Document
+                  Upload & Publish File 🚀
                 </button>
               </div>
             </form>

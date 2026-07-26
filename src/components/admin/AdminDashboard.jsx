@@ -6,7 +6,7 @@ import { QuizPreviewEditor } from './QuizPreviewEditor';
 import { ActiveQuizCard } from './ActiveQuizCard';
 import { generateQuizWithGemini, generateSmartFallbackQuiz } from '../../services/gemini_quiz_service';
 import { createQuizInDB, fetchAdminQuizzes } from '../../services/supabase';
-import { getRegisteredStudents } from '../../services/student_service';
+import { getRegisteredStudents, fetchLiveRegisteredStudents } from '../../services/student_service';
 import { getUPSCNotes, addUPSCNote, deleteUPSCNote, UPSC_SUBJECTS } from '../../services/notes_service';
 import { getCustomCurrentAffairs, addCustomCurrentAffairs, deleteCustomCurrentAffairs } from '../../services/current_affairs_service';
 
@@ -57,6 +57,15 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
     }
   };
 
+  const loadStudents = async () => {
+    try {
+      const liveList = await fetchLiveRegisteredStudents();
+      setStudents(liveList || []);
+    } catch (err) {
+      setStudents(getRegisteredStudents());
+    }
+  };
+
   const loadNetworkInfo = async () => {
     try {
       const res = await fetch('/api/network-info');
@@ -87,9 +96,12 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
   useEffect(() => {
     loadQuizzes();
     loadNetworkInfo();
-    setStudents(getRegisteredStudents());
+    loadStudents();
     loadNotes();
     loadCA();
+
+    // Auto-update student directory every 3 seconds when students log in from any device
+    const studentPollInterval = setInterval(loadStudents, 3000);
 
     const handlePrefill = (e) => {
       if (e.detail && e.detail.text) {
@@ -100,7 +112,10 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
     };
 
     window.addEventListener('prefill_quiz_text', handlePrefill);
-    return () => window.removeEventListener('prefill_quiz_text', handlePrefill);
+    return () => {
+      clearInterval(studentPollInterval);
+      window.removeEventListener('prefill_quiz_text', handlePrefill);
+    };
   }, []);
 
   const handleCASubmit = (e) => {
@@ -449,15 +464,22 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
 
       {/* Registered Students Management Directory */}
       <div style={{ marginTop: '3rem', marginBottom: '2.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '1.25rem' }}>
-          <Users color="var(--primary-violet)" size={22} />
-          <h2>Registered Students Directory ({students.length})</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+            <Users color="var(--primary-violet)" size={22} />
+            <h2>Live Registered Students Directory ({students.length})</h2>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(52, 211, 153, 0.15)', border: '1px solid rgba(52, 211, 153, 0.35)', padding: '0.35rem 0.85rem', borderRadius: '16px', fontSize: '0.8rem', color: '#34d399', fontWeight: 700 }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#34d399', display: 'inline-block', animation: 'pulse 1.5s infinite' }}></span>
+            Real-Time Auto Sync Active
+          </div>
         </div>
 
         <div className="glass-panel" style={{ padding: '1.25rem' }}>
           {students.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-              No students registered yet. Student profiles automatically appear here upon registration!
+              No students registered yet. Student profiles automatically appear here live when anyone logs in from any device!
             </div>
           ) : (
             <div className="table-responsive-wrapper">
@@ -467,6 +489,7 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
                   <th>Student Name</th>
                   <th>Student ID</th>
                   <th>Email Address</th>
+                  <th>Login Device / Platform</th>
                   <th>Joined Date</th>
                   <th>Quiz Attempts</th>
                   <th>Average Score</th>
@@ -500,6 +523,18 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
                       </span>
                     </td>
                     <td style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>{std.email}</td>
+                    <td>
+                      <span style={{
+                        background: 'rgba(99, 102, 241, 0.12)',
+                        color: 'var(--primary-violet)',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.78rem',
+                        fontWeight: 700
+                      }}>
+                        {std.device ? std.device : 'Web Client'}
+                      </span>
+                    </td>
                     <td style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>{std.joinedDate}</td>
                     <td>
                       <span style={{ fontWeight: 700 }}>{std.attemptsCount || 0}</span>
