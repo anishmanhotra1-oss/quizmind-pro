@@ -302,19 +302,7 @@ async function deleteUPSCNote(noteId) {
 async function getNotesDocuments() {
   const db = await readDb();
   if (!db.notesDocuments) {
-    db.notesDocuments = [
-      {
-        id: 'doc-note-101',
-        title: 'UPSC Mains GS II Constitutional Landmarks Master Reference Sheet',
-        subject: 'polity',
-        fileType: 'pdf',
-        fileSize: '2.4 MB',
-        fileName: 'UPSC_GS2_Constitutional_Landmarks.pdf',
-        fileData: 'DATA_EMBEDDED',
-        uploadDate: '2026-07-25',
-        uploadedBy: 'Anish Manhotra'
-      }
-    ];
+    db.notesDocuments = [];
     await writeDb(db);
   }
   return db.notesDocuments;
@@ -355,18 +343,7 @@ async function deleteNotesDocument(docId) {
 async function getCurrentAffairs() {
   const db = await readDb();
   if (!db.currentAffairs) {
-    db.currentAffairs = [
-      {
-        id: 'ca-101',
-        title: 'National Quantum Mission (NQM) 2026: Implementation Roadmap & Strategic Implications',
-        category: 'science',
-        categoryName: 'Science & Technology',
-        source: 'PIB / Hindu Editorial',
-        date: '2026-07-26',
-        summary: 'Deep dive into India\'s Quantum Communication and Computing mandate approved by DST.',
-        content: '# National Quantum Mission 2026\n\nIndia advances quantum communication networks across 2000 km key distribution routes.'
-      }
-    ];
+    db.currentAffairs = [];
     await writeDb(db);
   }
   return db.currentAffairs;
@@ -406,19 +383,7 @@ async function deleteCurrentAffairs(caId) {
 async function getCADocuments() {
   const db = await readDb();
   if (!db.caDocuments) {
-    db.caDocuments = [
-      {
-        id: 'doc-ca-201',
-        title: 'PIB & Yojana July 2026 Monthly Current Affairs Digest Dossier',
-        category: 'national',
-        fileType: 'pdf',
-        fileSize: '3.8 MB',
-        fileName: 'PIB_July_2026_Current_Affairs_Digest.pdf',
-        fileData: 'DATA_EMBEDDED',
-        uploadDate: '2026-07-26',
-        uploadedBy: 'Current Affairs Desk'
-      }
-    ];
+    db.caDocuments = [];
     await writeDb(db);
   }
   return db.caDocuments;

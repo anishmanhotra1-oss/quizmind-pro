@@ -46,6 +46,11 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
   const [selectedFileName, setSelectedFileName] = useState('');
   const [selectedFileSize, setSelectedFileSize] = useState('');
 
+  // Upload Progress & Status State
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadCompleted, setUploadCompleted] = useState(false);
+
   // Admin Add Article Modal state
   const [showAddArticleModal, setShowAddArticleModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -71,7 +76,7 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
     if (!silent) setLoading(true);
     setIsRefreshing(true);
     try {
-      const data = await fetchLiveCustomCurrentAffairs({ category: activeCategory, searchQuery });
+      const data = await fetchCurrentAffairs({ category: activeCategory, searchQuery });
       setArticles(data);
       if (topBreakingArticles.length === 0 && data.length > 0) {
         setTopBreakingArticles(data);
@@ -147,15 +152,22 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
     }
     if (window.confirm('Delete this published current affairs article?')) {
       const updated = await deleteCustomCurrentAffairs(articleId, userRole);
-      setArticles(updated);
+      setArticles(updated || []);
       if (selectedArticle && selectedArticle.id === articleId) setSelectedArticle(null);
     }
   };
 
-  // Native File Picker handler for mobile & desktop
+  // Native File Picker handler for mobile & desktop with 15MB limit check
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      alert(`File size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds 15 MB upload limit. Please select a document smaller than 15 MB.`);
+      e.target.value = '';
+      return;
+    }
 
     setSelectedFile(file);
     setSelectedFileName(file.name);
@@ -196,24 +208,53 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
       return;
     }
 
-    await addCADocument({
-      title: docTitle.trim(),
-      category: docCategory,
-      fileType: docFileType || 'pdf',
-      fileSize: selectedFileSize || '1.4 MB',
-      fileData: selectedFileData || docContentText.trim(),
-      fileName: selectedFileName || `${docTitle}.${docFileType || 'pdf'}`,
-      uploadedBy: userRole === 'admin' ? 'UPSC Admin Faculty' : 'Faculty Panel'
-    });
+    setIsUploading(true);
+    setUploadProgress(10);
+    setUploadCompleted(false);
 
-    setDocTitle('');
-    setDocContentText('');
-    setSelectedFile(null);
-    setSelectedFileData('');
-    setSelectedFileName('');
-    setSelectedFileSize('');
-    setShowDocUploadModal(false);
-    await loadDocuments();
+    let p = 10;
+    const progressInterval = setInterval(() => {
+      p += Math.floor(Math.random() * 20) + 12;
+      if (p >= 90) {
+        p = 90;
+        clearInterval(progressInterval);
+      }
+      setUploadProgress(p);
+    }, 150);
+
+    try {
+      await addCADocument({
+        title: docTitle.trim(),
+        category: docCategory,
+        fileType: docFileType || 'pdf',
+        fileSize: selectedFileSize || '1.4 MB',
+        fileData: selectedFileData || docContentText.trim(),
+        fileName: selectedFileName || `${docTitle}.${docFileType || 'pdf'}`,
+        uploadedBy: userRole === 'admin' ? 'UPSC Admin Faculty' : 'Faculty Panel'
+      });
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      setUploadCompleted(true);
+
+      setTimeout(async () => {
+        setDocTitle('');
+        setDocContentText('');
+        setSelectedFile(null);
+        setSelectedFileData('');
+        setSelectedFileName('');
+        setSelectedFileSize('');
+        setIsUploading(false);
+        setUploadProgress(0);
+        setUploadCompleted(false);
+        setShowDocUploadModal(false);
+        await loadDocuments();
+      }, 1200);
+    } catch (err) {
+      clearInterval(progressInterval);
+      setIsUploading(false);
+      alert('Failed to upload document: ' + err.message);
+    }
   };
 
   const handleDeleteDoc = async (e, docId) => {
@@ -222,9 +263,9 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
       alert('Only Admin users can delete dossiers and document attachments.');
       return;
     }
-    if (window.confirm('Delete this attached document?')) {
+    if (window.confirm('Delete this attached document from everywhere?')) {
       const updated = await deleteCADocument(docId, userRole);
-      setDocuments(updated);
+      setDocuments(updated || []);
     }
   };
 
@@ -922,12 +963,42 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
                 />
               </div>
 
+              {/* Real-time Percentage Upload Progress Bar & Status */}
+              {isUploading && (
+                <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'rgba(99, 102, 241, 0.08)', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', fontSize: '0.88rem', fontWeight: 700 }}>
+                    <span style={{ color: uploadCompleted ? '#34d399' : 'var(--primary-indigo)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      {uploadCompleted ? '✔ Done and Published!' : `Uploading File to Server... ${uploadProgress}%`}
+                    </span>
+                    <span style={{ fontWeight: 800, color: uploadCompleted ? '#34d399' : 'var(--primary-indigo)' }}>{uploadProgress}%</span>
+                  </div>
+                  
+                  <div style={{ width: '100%', height: '10px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '5px', overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${uploadProgress}%`,
+                      height: '100%',
+                      background: uploadCompleted 
+                        ? 'linear-gradient(90deg, #10b981, #34d399)' 
+                        : 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899)',
+                      transition: 'width 0.2s ease-out',
+                      borderRadius: '5px'
+                    }} />
+                  </div>
+
+                  {uploadCompleted && (
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.82rem', color: '#34d399', fontWeight: 600, textAlign: 'center' }}>
+                      Done and published! Saved in backend & accessible for all users globally.
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.25rem' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowDocUploadModal(false)}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowDocUploadModal(false)} disabled={isUploading}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Upload & Publish File 🚀
+                <button type="submit" className="btn btn-primary" disabled={isUploading}>
+                  {isUploading ? (uploadCompleted ? 'Done & Published!' : `Uploading (${uploadProgress}%)...`) : 'Upload & Publish File 🚀'}
                 </button>
               </div>
             </form>

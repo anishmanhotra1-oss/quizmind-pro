@@ -301,26 +301,32 @@ export async function deleteUPSCNote(noteId, userRole = 'student') {
 // Notes Document Attachments Storage & Management
 const STORAGE_KEY_NOTES_DOCS = 'QUIZMIND_NOTES_DOCUMENTS';
 
+function safeSaveLocalStorage(key, items) {
+  try {
+    localStorage.setItem(key, JSON.stringify(items));
+  } catch (err) {
+    console.warn(`localStorage quota exceeded for ${key}, caching metadata only.`);
+    try {
+      const lightweight = items.map(item => {
+        if (item.fileData && item.fileData.length > 100000) {
+          return { ...item, fileData: 'SERVER_STORED' };
+        }
+        return item;
+      });
+      localStorage.setItem(key, JSON.stringify(lightweight));
+    } catch (e) {}
+  }
+}
+
 export async function fetchLiveNotesDocuments() {
   try {
     const res = await fetch('/api/notes/documents');
     if (res.ok) {
       const serverDocs = await res.json();
-      const localDocs = getNotesDocuments();
-      const docMap = new Map();
       if (Array.isArray(serverDocs)) {
-        serverDocs.forEach(d => docMap.set(d.id, d));
+        safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, serverDocs);
+        return serverDocs;
       }
-      if (Array.isArray(localDocs)) {
-        localDocs.forEach(d => {
-          if (!docMap.has(d.id)) {
-            docMap.set(d.id, d);
-          }
-        });
-      }
-      const mergedDocs = Array.from(docMap.values());
-      localStorage.setItem(STORAGE_KEY_NOTES_DOCS, JSON.stringify(mergedDocs));
-      return mergedDocs;
     }
   } catch (e) {}
   return getNotesDocuments();
@@ -331,28 +337,7 @@ export function getNotesDocuments() {
   if (saved) {
     try { return JSON.parse(saved); } catch (e) {}
   }
-  return [
-    {
-      id: 'notes-doc-1',
-      title: 'UPSC Polity Constitutional Amendments (1st to 106th) Handout PDF',
-      subject: 'polity',
-      fileType: 'pdf',
-      fileSize: '1.8 MB',
-      uploadDate: new Date().toISOString().split('T')[0],
-      fileData: 'DATA_EMBEDDED',
-      uploadedBy: 'Anish Manhotra (UPSC Panel)'
-    },
-    {
-      id: 'notes-doc-2',
-      title: 'GS Paper III Economy Key Formulas & Macro Data Cheat Sheet',
-      subject: 'economy',
-      fileType: 'pdf',
-      fileSize: '1.2 MB',
-      uploadDate: new Date().toISOString().split('T')[0],
-      fileData: 'DATA_EMBEDDED',
-      uploadedBy: 'Faculty Wing'
-    }
-  ];
+  return [];
 }
 
 export async function addNotesDocument(doc) {
@@ -368,8 +353,6 @@ export async function addNotesDocument(doc) {
     fileName: doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'pdf'}`,
     uploadedBy: doc.uploadedBy || 'Admin Panel'
   };
-  const updated = [newDoc, ...current];
-  localStorage.setItem(STORAGE_KEY_NOTES_DOCS, JSON.stringify(updated));
 
   try {
     const res = await fetch('/api/notes/documents', {
@@ -379,10 +362,14 @@ export async function addNotesDocument(doc) {
     });
     if (res.ok) {
       const serverDoc = await res.json();
+      const updated = [serverDoc, ...current];
+      safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, updated);
       return serverDoc;
     }
   } catch (e) {}
 
+  const updated = [newDoc, ...current];
+  safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, updated);
   return newDoc;
 }
 
@@ -392,13 +379,20 @@ export async function deleteNotesDocument(docId, userRole = 'student') {
   }
   const current = getNotesDocuments();
   const updated = current.filter(d => d.id !== docId);
-  localStorage.setItem(STORAGE_KEY_NOTES_DOCS, JSON.stringify(updated));
+  safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, updated);
 
   try {
-    await fetch(`/api/notes/documents/${docId}`, {
+    const res = await fetch(`/api/notes/documents/${docId}`, {
       method: 'DELETE',
       headers: { 'x-user-role': userRole }
     });
+    if (res.ok) {
+      const serverUpdated = await res.json();
+      if (Array.isArray(serverUpdated)) {
+        safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, serverUpdated);
+        return serverUpdated;
+      }
+    }
   } catch (e) {}
 
   return updated;

@@ -195,15 +195,22 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
   };
 
   const handleDeleteCAFromAdmin = async (id) => {
-    if (window.confirm('Delete this current affairs article from student feed?')) {
+    if (window.confirm('Delete this current affairs article from everywhere?')) {
       const updated = await deleteCustomCurrentAffairs(id, 'admin');
-      setCurrentAffairs(updated);
+      setCurrentAffairs(updated || []);
     }
   };
 
   const handleFileSelectForNote = (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
+
+    const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      alert(`File size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds 15 MB upload limit. Please select a file smaller than 15 MB.`);
+      e.target.value = '';
+      return;
+    }
 
     const sizeFormatted = file.size > 1024 * 1024
       ? (file.size / (1024 * 1024)).toFixed(1) + ' MB'
@@ -262,9 +269,9 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
   };
 
   const handleDeleteNoteFromAdmin = async (noteId) => {
-    if (window.confirm('Delete this UPSC note from student dashboard?')) {
+    if (window.confirm('Delete this UPSC note from everywhere?')) {
       const updated = await deleteUPSCNote(noteId, 'admin');
-      setNotes(updated);
+      setNotes(updated || []);
     }
   };
 

@@ -59,15 +59,42 @@ const STORAGE_KEY_CUSTOM = 'QUIZMIND_CUSTOM_AFFAIRS';
 const STORAGE_KEY_DOCS = 'QUIZMIND_CA_DOCUMENTS';
 
 export async function fetchLiveCustomCurrentAffairs() {
+  let liveArticles = [];
+  let customArticles = [];
+
   try {
-    const res = await fetch('/api/current-affairs');
-    if (res.ok) {
-      const serverList = await res.json();
-      localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(serverList));
-      return serverList;
+    const liveRes = await fetch('/api/current-affairs/live');
+    if (liveRes.ok) {
+      liveArticles = await liveRes.json();
     }
   } catch (e) {}
-  return getCustomCurrentAffairs();
+
+  try {
+    const customRes = await fetch('/api/current-affairs');
+    if (customRes.ok) {
+      customArticles = await customRes.json();
+    }
+  } catch (e) {}
+
+  let merged = [];
+  if (Array.isArray(customArticles) && customArticles.length > 0) {
+    merged = [...customArticles];
+  } else {
+    merged = [...getCustomCurrentAffairs()];
+  }
+
+  if (Array.isArray(liveArticles) && liveArticles.length > 0) {
+    const existingTitles = new Set(merged.map(item => item.title.toLowerCase().trim()));
+    liveArticles.forEach(item => {
+      if (!existingTitles.has(item.title.toLowerCase().trim())) {
+        merged.unshift(item);
+        existingTitles.add(item.title.toLowerCase().trim());
+      }
+    });
+  }
+
+  localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(merged));
+  return merged;
 }
 
 export function getCustomCurrentAffairs() {
@@ -151,36 +178,49 @@ export async function deleteCustomCurrentAffairs(articleId, userRole = 'student'
   saveCustomCurrentAffairs(updated);
 
   try {
-    await fetch(`/api/current-affairs/${articleId}`, {
+    const res = await fetch(`/api/current-affairs/${articleId}`, {
       method: 'DELETE',
       headers: { 'x-user-role': userRole }
     });
+    if (res.ok) {
+      const serverUpdated = await res.json();
+      if (Array.isArray(serverUpdated)) {
+        saveCustomCurrentAffairs(serverUpdated);
+        return serverUpdated;
+      }
+    }
   } catch (e) {}
 
   return updated;
 }
 
 // Current Affairs Document Attachments Sync
+function safeSaveLocalStorage(key, items) {
+  try {
+    localStorage.setItem(key, JSON.stringify(items));
+  } catch (err) {
+    console.warn(`localStorage quota exceeded for ${key}, caching metadata only.`);
+    try {
+      const lightweight = items.map(item => {
+        if (item.fileData && item.fileData.length > 100000) {
+          return { ...item, fileData: 'SERVER_STORED' };
+        }
+        return item;
+      });
+      localStorage.setItem(key, JSON.stringify(lightweight));
+    } catch (e) {}
+  }
+}
+
 export async function fetchLiveCADocuments() {
   try {
     const res = await fetch('/api/current-affairs/documents');
     if (res.ok) {
       const serverDocs = await res.json();
-      const localDocs = getCADocuments();
-      const docMap = new Map();
       if (Array.isArray(serverDocs)) {
-        serverDocs.forEach(d => docMap.set(d.id, d));
+        safeSaveLocalStorage(STORAGE_KEY_DOCS, serverDocs);
+        return serverDocs;
       }
-      if (Array.isArray(localDocs)) {
-        localDocs.forEach(d => {
-          if (!docMap.has(d.id)) {
-            docMap.set(d.id, d);
-          }
-        });
-      }
-      const mergedDocs = Array.from(docMap.values());
-      localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(mergedDocs));
-      return mergedDocs;
     }
   } catch (e) {}
   return getCADocuments();
@@ -191,18 +231,7 @@ export function getCADocuments() {
   if (saved) {
     try { return JSON.parse(saved); } catch (e) {}
   }
-  return [
-    {
-      id: 'ca-doc-1',
-      title: 'Economic Survey 2026 Highlights & Key Data PDF',
-      category: 'economy',
-      fileType: 'pdf',
-      fileSize: '2.4 MB',
-      uploadDate: new Date().toISOString().split('T')[0],
-      fileData: 'DATA_EMBEDDED',
-      uploadedBy: 'Admin Panel'
-    }
-  ];
+  return [];
 }
 
 export async function addCADocument(doc) {
@@ -218,8 +247,6 @@ export async function addCADocument(doc) {
     fileName: doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'pdf'}`,
     uploadedBy: doc.uploadedBy || 'Admin'
   };
-  const updated = [newDoc, ...current];
-  localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(updated));
 
   try {
     const res = await fetch('/api/current-affairs/documents', {
@@ -229,10 +256,14 @@ export async function addCADocument(doc) {
     });
     if (res.ok) {
       const serverDoc = await res.json();
+      const updated = [serverDoc, ...current];
+      safeSaveLocalStorage(STORAGE_KEY_DOCS, updated);
       return serverDoc;
     }
   } catch (e) {}
 
+  const updated = [newDoc, ...current];
+  safeSaveLocalStorage(STORAGE_KEY_DOCS, updated);
   return newDoc;
 }
 
@@ -242,13 +273,20 @@ export async function deleteCADocument(docId, userRole = 'student') {
   }
   const current = getCADocuments();
   const updated = current.filter(d => d.id !== docId);
-  localStorage.setItem(STORAGE_KEY_DOCS, JSON.stringify(updated));
+  safeSaveLocalStorage(STORAGE_KEY_DOCS, updated);
 
   try {
-    await fetch(`/api/current-affairs/documents/${docId}`, {
+    const res = await fetch(`/api/current-affairs/documents/${docId}`, {
       method: 'DELETE',
       headers: { 'x-user-role': userRole }
     });
+    if (res.ok) {
+      const serverUpdated = await res.json();
+      if (Array.isArray(serverUpdated)) {
+        safeSaveLocalStorage(STORAGE_KEY_DOCS, serverUpdated);
+        return serverUpdated;
+      }
+    }
   } catch (e) {}
 
   return updated;
