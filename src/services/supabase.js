@@ -12,6 +12,31 @@ export function generateAccessCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+/** Build external quiz URL with student metadata parameters */
+export function buildExternalQuizUrl(rawUrl, studentName, topic) {
+  try {
+    let formattedUrl = (rawUrl || '').trim();
+    if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = 'https://' + formattedUrl;
+    }
+    const targetUrl = new URL(formattedUrl);
+    targetUrl.searchParams.set('studentId', (studentName || 'Student').trim());
+    targetUrl.searchParams.set('topic', (topic || 'Quiz').trim());
+    return targetUrl.toString();
+  } catch (e) {
+    return rawUrl;
+  }
+}
+
+/** Fetch All Active External Quiz Links */
+export async function fetchExternalQuizLinks() {
+  const response = await fetch(`${API_BASE}/api/student/quiz-links`);
+  if (!response.ok) {
+    return [];
+  }
+  return await response.json();
+}
+
 /** Create a new Quiz with Questions */
 export async function createQuizInDB({ title, timeLimitMins, questions, adminId = 'admin-1' }) {
   const response = await fetch(`${API_BASE}/api/quizzes`, {

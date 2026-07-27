@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, Brain, Newspaper, Trophy, ShieldCheck, Zap, 
   ArrowRight, FileText, KeyRound, User, LogIn, AlertCircle, CheckCircle2, Globe, Flame
 } from 'lucide-react';
-import { fetchQuizByAccessCode, fetchQuestionsForQuiz, fetchAdminQuizzes } from '../../services/supabase';
+import { fetchQuizByAccessCode, fetchQuestionsForQuiz, fetchAdminQuizzes, fetchExternalQuizLinks, buildExternalQuizUrl } from '../../services/supabase';
 
 export function HomePage({ onNavigate, onStartQuiz, defaultStudentName }) {
   const [accessCode, setAccessCode] = useState('');
@@ -11,14 +11,23 @@ export function HomePage({ onNavigate, onStartQuiz, defaultStudentName }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const [availableQuizzes, setAvailableQuizzes] = useState([]);
+  const [externalLinks, setExternalLinks] = useState([]);
 
-  React.useEffect(() => {
-    fetchAdminQuizzes().then(data => setAvailableQuizzes(data || [])).catch(() => {});
+  useEffect(() => {
+    const loadAll = () => {
+      fetchAdminQuizzes().then(data => setAvailableQuizzes(data || [])).catch(() => {});
+      fetchExternalQuizLinks().then(data => setExternalLinks(data || [])).catch(() => {});
+    };
+    loadAll();
+    const interval = setInterval(loadAll, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleStudentJoin = async (e) => {
     e.preventDefault();
-    if (!accessCode.trim() || !studentName.trim()) {
+    const cleanCode = accessCode.trim();
+    const cleanName = studentName.trim();
+    if (!cleanCode || !cleanName) {
       setErrorMsg('Please enter both your display name and 6-digit access code.');
       return;
     }
@@ -27,7 +36,24 @@ export function HomePage({ onNavigate, onStartQuiz, defaultStudentName }) {
     setErrorMsg('');
 
     try {
-      const quiz = await fetchQuizByAccessCode(accessCode.trim());
+      // Check external links local state first
+      const foundExt = externalLinks.find(l => l.access_code === cleanCode);
+      if (foundExt) {
+        const targetUrl = buildExternalQuizUrl(foundExt.externalUrl, cleanName, foundExt.topic);
+        window.open(targetUrl, '_blank');
+        setIsJoining(false);
+        return;
+      }
+
+      const quiz = await fetchQuizByAccessCode(cleanCode);
+
+      if (quiz && (quiz.is_external || quiz.externalUrl)) {
+        const targetUrl = buildExternalQuizUrl(quiz.externalUrl, cleanName, quiz.topic || quiz.title);
+        window.open(targetUrl, '_blank');
+        setIsJoining(false);
+        return;
+      }
+
       const questions = await fetchQuestionsForQuiz(quiz.id);
 
       if (!questions || questions.length === 0) {
@@ -37,7 +63,7 @@ export function HomePage({ onNavigate, onStartQuiz, defaultStudentName }) {
       onStartQuiz({
         quiz,
         questions,
-        studentName: studentName.trim()
+        studentName: cleanName
       });
     } catch (err) {
       setErrorMsg(err.message || 'Invalid or non-existent 6-digit access code.');
@@ -212,12 +238,12 @@ export function HomePage({ onNavigate, onStartQuiz, defaultStudentName }) {
             </form>
 
             {/* Active Quiz Codes Quick Select */}
-            {availableQuizzes.length > 0 && (
+            {(availableQuizzes.length > 0 || externalLinks.length > 0) && (
               <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-light)' }}>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  📢 Active Classroom Access Codes:
+                  📢 Active Classroom & External Quiz Codes:
                 </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '140px', overflowY: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '160px', overflowY: 'auto' }}>
                   {availableQuizzes.map(q => (
                     <button
                       key={q.id}
@@ -242,6 +268,39 @@ export function HomePage({ onNavigate, onStartQuiz, defaultStudentName }) {
                       </span>
                       <span style={{ fontFamily: 'monospace', fontWeight: 800, color: 'var(--primary-indigo)', background: 'rgba(99, 102, 241, 0.15)', padding: '2px 6px', borderRadius: '4px' }}>
                         {q.access_code}
+                      </span>
+                    </button>
+                  ))}
+
+                  {externalLinks.map(ext => (
+                    <button
+                      key={ext.id}
+                      type="button"
+                      onClick={() => {
+                        setAccessCode(ext.access_code);
+                        const cleanName = studentName.trim() || 'Student';
+                        const targetUrl = buildExternalQuizUrl(ext.externalUrl, cleanName, ext.topic);
+                        window.open(targetUrl, '_blank');
+                      }}
+                      style={{
+                        background: accessCode === ext.access_code ? 'rgba(168, 85, 247, 0.25)' : 'rgba(168, 85, 247, 0.08)',
+                        border: '1px solid ' + (accessCode === ext.access_code ? '#a855f7' : 'rgba(168, 85, 247, 0.3)'),
+                        padding: '0.4rem 0.65rem',
+                        borderRadius: '8px',
+                        fontSize: '0.82rem',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        color: 'var(--text-main)'
+                      }}
+                    >
+                      <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px', color: '#e9d5ff' }}>
+                        🌐 {ext.topic}
+                      </span>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#a855f7', background: 'rgba(168, 85, 247, 0.2)', padding: '2px 6px', borderRadius: '4px' }}>
+                        {ext.access_code}
                       </span>
                     </button>
                   ))}

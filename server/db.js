@@ -6,10 +6,16 @@ const DB_FILE = path.join(__dirname, 'db.json');
 async function readDb() {
   try {
     const data = await fs.readFile(DB_FILE, 'utf8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (!parsed.quizzes) parsed.quizzes = [];
+    if (!parsed.questions) parsed.questions = [];
+    if (!parsed.attempts) parsed.attempts = [];
+    if (!parsed.externalQuizLinks) parsed.externalQuizLinks = [];
+    if (!parsed.externalQuizResults) parsed.externalQuizResults = [];
+    return parsed;
   } catch (err) {
     // If file doesn't exist, return empty template
-    const initial = { quizzes: [], questions: [], attempts: [] };
+    const initial = { quizzes: [], questions: [], attempts: [], externalQuizLinks: [], externalQuizResults: [] };
     await writeDb(initial);
     return initial;
   }
@@ -44,12 +50,34 @@ async function saveQuiz(quiz, questions) {
 }
 
 /**
- * Finds a quiz by its unique 6-digit access code.
+ * Finds a quiz by its unique 6-digit access code (both standard and external AI quiz links).
  */
 async function getQuizByAccessCode(code) {
   const db = await readDb();
-  const quiz = db.quizzes.find(q => q.access_code === code && q.is_published);
-  return quiz || null;
+  const cleanCode = String(code).trim();
+  
+  // 1. Search standard quizzes
+  const quiz = db.quizzes.find(q => q.access_code === cleanCode && q.is_published);
+  if (quiz) return quiz;
+
+  // 2. Search external quiz links
+  if (db.externalQuizLinks && db.externalQuizLinks.length > 0) {
+    const extLink = db.externalQuizLinks.find(l => l.access_code === cleanCode);
+    if (extLink) {
+      return {
+        id: extLink.id,
+        title: `🌐 External Quiz: ${extLink.topic}`,
+        topic: extLink.topic,
+        access_code: extLink.access_code,
+        externalUrl: extLink.externalUrl,
+        is_external: true,
+        is_published: true,
+        created_at: extLink.created_at
+      };
+    }
+  }
+
+  return null;
 }
 
 /**

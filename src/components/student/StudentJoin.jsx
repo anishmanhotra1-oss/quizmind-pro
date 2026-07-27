@@ -1,23 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { LogIn, KeyRound, User, Sparkles, AlertCircle, Play, BookOpen, Bookmark, ArrowRight } from 'lucide-react';
-import { fetchQuizByAccessCode, fetchQuestionsForQuiz, fetchAdminQuizzes } from '../../services/supabase';
+import { LogIn, KeyRound, User, Sparkles, AlertCircle, Play, BookOpen, Bookmark, ArrowRight, ExternalLink } from 'lucide-react';
+import { fetchQuizByAccessCode, fetchQuestionsForQuiz, fetchAdminQuizzes, fetchExternalQuizLinks, buildExternalQuizUrl } from '../../services/supabase';
 import { getUPSCNotes, UPSC_SUBJECTS } from '../../services/notes_service';
 import { registerStudentAccount } from '../../services/student_service';
-
-function buildExternalQuizUrl(rawUrl, studentName, topic) {
-  try {
-    let formattedUrl = (rawUrl || '').trim();
-    if (!/^https?:\/\//i.test(formattedUrl)) {
-      formattedUrl = 'https://' + formattedUrl;
-    }
-    const targetUrl = new URL(formattedUrl);
-    targetUrl.searchParams.set('studentId', (studentName || 'Student').trim());
-    targetUrl.searchParams.set('topic', (topic || 'Quiz').trim());
-    return targetUrl.toString();
-  } catch (e) {
-    return rawUrl;
-  }
-}
 
 export function StudentJoin({ onStartQuiz, defaultStudentName, onStudentLogin }) {
   const [accessCode, setAccessCode] = useState('');
@@ -31,16 +16,24 @@ export function StudentJoin({ onStartQuiz, defaultStudentName, onStudentLogin })
   const [publishedNotes, setPublishedNotes] = useState([]);
 
   useEffect(() => {
-    fetchAdminQuizzes()
-      .then(data => setAvailableQuizzes(data || []))
-      .catch(() => {});
+    const loadAllQuizzesAndLinks = () => {
+      fetchAdminQuizzes()
+        .then(data => setAvailableQuizzes(data || []))
+        .catch(() => {});
 
-    fetch('/api/student/quiz-links')
-      .then(res => res.json())
-      .then(data => setExternalLinks(data || []))
-      .catch(() => {});
+      fetchExternalQuizLinks()
+        .then(data => setExternalLinks(data || []))
+        .catch(() => {});
+    };
+
+    loadAllQuizzesAndLinks();
+    
+    // Live polling every 3 seconds so external link quizzes uploaded by admin appear immediately for every student
+    const pollInterval = setInterval(loadAllQuizzesAndLinks, 3000);
 
     setPublishedNotes(getUPSCNotes());
+
+    return () => clearInterval(pollInterval);
   }, []);
 
   const handleJoinWithCode = async (codeToUse) => {
@@ -66,7 +59,7 @@ export function StudentJoin({ onStartQuiz, defaultStudentName, onStudentLogin })
         onStudentLogin(cleanName, registered ? registered.email : '');
       }
 
-      // Check external links first
+      // Check external links local state first
       const foundExt = externalLinks.find(l => l.access_code === cleanCode);
       if (foundExt) {
         const targetUrl = buildExternalQuizUrl(foundExt.externalUrl, cleanName, foundExt.topic);
@@ -76,6 +69,15 @@ export function StudentJoin({ onStartQuiz, defaultStudentName, onStudentLogin })
       }
 
       const quiz = await fetchQuizByAccessCode(cleanCode);
+
+      // Handle external link quiz returned by access code search
+      if (quiz && (quiz.is_external || quiz.externalUrl)) {
+        const targetUrl = buildExternalQuizUrl(quiz.externalUrl, cleanName, quiz.topic || quiz.title);
+        window.open(targetUrl, '_blank');
+        setIsJoining(false);
+        return;
+      }
+
       const questions = await fetchQuestionsForQuiz(quiz.id);
 
       if (!questions || questions.length === 0) {
