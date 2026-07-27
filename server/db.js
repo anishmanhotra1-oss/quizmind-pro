@@ -12,10 +12,28 @@ async function readDb() {
     if (!parsed.attempts) parsed.attempts = [];
     if (!parsed.externalQuizLinks) parsed.externalQuizLinks = [];
     if (!parsed.externalQuizResults) parsed.externalQuizResults = [];
+    if (!parsed.students) parsed.students = [];
+    if (!parsed.chatMessages) parsed.chatMessages = [];
+    if (!parsed.notes) parsed.notes = [];
+    if (!parsed.notesDocuments) parsed.notesDocuments = [];
+    if (!parsed.currentAffairs) parsed.currentAffairs = [];
+    if (!parsed.caDocuments) parsed.caDocuments = [];
     return parsed;
   } catch (err) {
     // If file doesn't exist, return empty template
-    const initial = { quizzes: [], questions: [], attempts: [], externalQuizLinks: [], externalQuizResults: [] };
+    const initial = {
+      quizzes: [],
+      questions: [],
+      attempts: [],
+      externalQuizLinks: [],
+      externalQuizResults: [],
+      students: [],
+      chatMessages: [],
+      notes: [],
+      notesDocuments: [],
+      currentAffairs: [],
+      caDocuments: []
+    };
     await writeDb(initial);
     return initial;
   }
@@ -337,6 +355,12 @@ async function deleteNotesDocument(docId) {
   return db.notesDocuments;
 }
 
+async function getNotesDocumentById(docId) {
+  const db = await readDb();
+  if (!db.notesDocuments) return null;
+  return db.notesDocuments.find(d => d.id === docId) || null;
+}
+
 /**
  * Current Affairs Articles
  */
@@ -416,6 +440,12 @@ async function deleteCADocument(docId) {
   db.caDocuments = db.caDocuments.filter(d => d.id !== docId);
   await writeDb(db);
   return db.caDocuments;
+}
+
+async function getCADocumentById(docId) {
+  const db = await readDb();
+  if (!db.caDocuments) return null;
+  return db.caDocuments.find(d => d.id === docId) || null;
 }
 
 /**
@@ -561,12 +591,14 @@ module.exports = {
   saveUPSCNote,
   deleteUPSCNote,
   getNotesDocuments,
+  getNotesDocumentById,
   saveNotesDocument,
   deleteNotesDocument,
   getCurrentAffairs,
   saveCurrentAffairs,
   deleteCurrentAffairs,
   getCADocuments,
+  getCADocumentById,
   saveCADocument,
   deleteCADocument,
   getExternalQuizLinks,

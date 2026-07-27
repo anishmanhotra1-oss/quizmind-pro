@@ -76,12 +76,22 @@ export async function fetchLiveCustomCurrentAffairs() {
     }
   } catch (e) {}
 
-  let merged = [];
-  if (Array.isArray(customArticles) && customArticles.length > 0) {
-    merged = [...customArticles];
-  } else {
-    merged = [...getCustomCurrentAffairs()];
+  const localCustom = getCustomCurrentAffairs();
+  const customMap = new Map();
+
+  if (Array.isArray(localCustom)) {
+    localCustom.forEach(item => {
+      if (item && item.title) customMap.set(item.id || item.title.toLowerCase().trim(), item);
+    });
   }
+
+  if (Array.isArray(customArticles)) {
+    customArticles.forEach(item => {
+      if (item && item.title) customMap.set(item.id || item.title.toLowerCase().trim(), item);
+    });
+  }
+
+  let merged = Array.from(customMap.values());
 
   if (Array.isArray(liveArticles) && liveArticles.length > 0) {
     const existingTitles = new Set(merged.map(item => item.title.toLowerCase().trim()));
@@ -144,6 +154,7 @@ export async function addCustomCurrentAffairs(articleData) {
     category: articleData.category || 'national',
     categoryName: categoryNames[articleData.category] || 'General News',
     source: articleData.source || 'Admin Faculty / PIB',
+    sourceUrl: articleData.sourceUrl || `https://news.google.com/search?q=${encodeURIComponent(articleData.title)}`,
     date: new Date().toISOString().split('T')[0],
     readTime: readTimeCalc,
     summary: articleData.summary || (articleData.content ? articleData.content.substring(0, 140) + '...' : ''),
@@ -213,17 +224,57 @@ function safeSaveLocalStorage(key, items) {
 }
 
 export async function fetchLiveCADocuments() {
+  const localDocs = getCADocuments();
+  let serverDocs = [];
+
   try {
     const res = await fetch('/api/current-affairs/documents');
     if (res.ok) {
-      const serverDocs = await res.json();
-      if (Array.isArray(serverDocs)) {
-        safeSaveLocalStorage(STORAGE_KEY_DOCS, serverDocs);
-        return serverDocs;
-      }
+      serverDocs = await res.json();
     }
   } catch (e) {}
-  return getCADocuments();
+
+  if (!Array.isArray(serverDocs)) serverDocs = [];
+
+  const docMap = new Map();
+  if (Array.isArray(localDocs)) {
+    localDocs.forEach(d => {
+      if (d && (d.id || d.title)) {
+        docMap.set(d.id || d.title.toLowerCase().trim(), d);
+      }
+    });
+  }
+
+  serverDocs.forEach(sd => {
+    if (sd && (sd.id || sd.title)) {
+      const key = sd.id || sd.title.toLowerCase().trim();
+      const local = docMap.get(key);
+      if (local) {
+        const fileData = (sd.fileData && sd.fileData !== 'SERVER_STORED' && sd.fileData !== '') 
+          ? sd.fileData 
+          : (local.fileData || sd.fileData);
+        docMap.set(key, { ...sd, fileData });
+      } else {
+        docMap.set(key, sd);
+      }
+    }
+  });
+
+  const mergedDocs = Array.from(docMap.values());
+  safeSaveLocalStorage(STORAGE_KEY_DOCS, mergedDocs);
+  return mergedDocs;
+}
+
+export async function fetchCADocumentById(docId) {
+  try {
+    const res = await fetch(`/api/current-affairs/documents/${docId}`);
+    if (res.ok) {
+      const doc = await res.json();
+      if (doc && doc.id) return doc;
+    }
+  } catch (e) {}
+  const local = getCADocuments().find(d => d.id === docId);
+  return local || null;
 }
 
 export function getCADocuments() {

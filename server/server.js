@@ -66,6 +66,7 @@ async function fetchLiveNewsRSS(rssUrl, category, categoryName) {
       
       const titleMatch = /<title>([\s\S]*?)<\/title>/i.exec(itemXml);
       const pubDateMatch = /<pubDate>([\s\S]*?)<\/pubDate>/i.exec(itemXml);
+      const linkMatch = /<link>([\s\S]*?)<\/link>/i.exec(itemXml) || /<guid[^>]*>([\s\S]*?)<\/guid>/i.exec(itemXml);
 
       if (titleMatch) {
         let cleanTitle = titleMatch[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/gi, '$1').trim();
@@ -74,6 +75,14 @@ async function fetchLiveNewsRSS(rssUrl, category, categoryName) {
         if (sourceMatch.length > 1) {
           source = sourceMatch.pop();
           cleanTitle = sourceMatch.join(' - ');
+        }
+
+        let sourceUrl = '';
+        if (linkMatch) {
+          sourceUrl = linkMatch[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/gi, '$1').trim();
+        }
+        if (!sourceUrl || !sourceUrl.startsWith('http')) {
+          sourceUrl = `https://news.google.com/search?q=${encodeURIComponent(cleanTitle)}`;
         }
 
         const dateObj = pubDateMatch ? new Date(pubDateMatch[1]) : new Date();
@@ -87,6 +96,7 @@ async function fetchLiveNewsRSS(rssUrl, category, categoryName) {
           date: formattedDate,
           readTime: '2 min read',
           source,
+          sourceUrl,
           summary: `Latest live update from ${source}: ${cleanTitle}. Read key developments for competitive examination preparation.`,
           highlights: [
             `Breaking news bulletin reported by ${source}.`,
@@ -123,6 +133,7 @@ function generateDynamicDailyNews() {
       date: today,
       readTime: '3 min read',
       source: 'PIB Delhi / Ministry of New and Renewable Energy',
+      sourceUrl: 'https://pib.gov.in',
       summary: `Government announces Phase II expansion of Green Hydrogen Hubs across major coastal ports for zero-emission industrial transformation.`,
       highlights: [
         `Target to achieve 5 MMT green hydrogen production by 2030 boosted with fresh incentives.`,
@@ -139,6 +150,7 @@ function generateDynamicDailyNews() {
       date: today,
       readTime: '4 min read',
       source: 'Reserve Bank of India Press Bureau',
+      sourceUrl: 'https://www.rbi.org.in',
       summary: `RBI Financial Stability Report confirms multi-decade low Gross NPA ratio for Commercial Banks alongside robust capital adequacy ratios.`,
       highlights: [
         `Scheduled Commercial Banks (SCBs) record GNPA ratio of below 2.8%.`,
@@ -155,6 +167,7 @@ function generateDynamicDailyNews() {
       date: today,
       readTime: '3 min read',
       source: 'ISRO / NASA Joint Mission Desk',
+      sourceUrl: 'https://www.isro.gov.in',
       summary: `ISRO & NASA complete final payload integration for NISAR Dual-Frequency Synthetic Aperture Radar satellite targeting global land-ice surface mapping.`,
       highlights: [
         `First dual-frequency (L-band and S-band) SAR satellite for ecosystem structure monitoring.`,
@@ -171,6 +184,7 @@ function generateDynamicDailyNews() {
       date: today,
       readTime: '3 min read',
       source: 'Ministry of Commerce & Industry',
+      sourceUrl: 'https://commerce.gov.in',
       summary: `Landmark Trade and Economic Partnership Agreement between India and EFTA nations (Switzerland, Norway, Iceland, Liechtenstein) becomes operational.`,
       highlights: [
         `Binding investment commitment of $100 Billion over 15 years in India.`,
@@ -187,6 +201,7 @@ function generateDynamicDailyNews() {
       date: today,
       readTime: '2 min read',
       source: 'PIB New Delhi / Sports Authority of India',
+      sourceUrl: 'https://pib.gov.in',
       summary: `Union Cabinet approves revamped Khelo India National Excellence Scheme to establish 100 specialized sports science centers nationwide.`,
       highlights: [
         `Establishment of High-Performance Centers for Olympic discipline training.`,
@@ -609,6 +624,16 @@ app.get('/api/notes/documents', async (req, res) => {
   }
 });
 
+app.get('/api/notes/documents/:id', async (req, res) => {
+  try {
+    const doc = await db.getNotesDocumentById(req.params.id);
+    if (!doc) return res.status(404).json({ error: 'Notes document not found.' });
+    res.json(doc);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch notes document.' });
+  }
+});
+
 app.post('/api/notes/documents', async (req, res) => {
   try {
     const doc = await db.saveNotesDocument(req.body);
@@ -712,6 +737,16 @@ app.get('/api/current-affairs/documents', async (req, res) => {
     res.json(docs);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch current affairs documents.' });
+  }
+});
+
+app.get('/api/current-affairs/documents/:id', async (req, res) => {
+  try {
+    const doc = await db.getCADocumentById(req.params.id);
+    if (!doc) return res.status(404).json({ error: 'Current affairs document not found.' });
+    res.json(doc);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch current affairs document.' });
   }
 });
 

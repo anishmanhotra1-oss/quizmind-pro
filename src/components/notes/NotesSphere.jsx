@@ -6,7 +6,7 @@ import {
 import { 
   getUPSCNotes, addUPSCNote, deleteUPSCNote, UPSC_SUBJECTS,
   getNotesDocuments, addNotesDocument, deleteNotesDocument,
-  fetchLiveUPSCNotes, fetchLiveNotesDocuments
+  fetchLiveUPSCNotes, fetchLiveNotesDocuments, fetchNotesDocumentById
 } from '../../services/notes_service';
 import { FormattedContentRenderer } from '../common/FormattedContentRenderer';
 
@@ -216,18 +216,26 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
     }
   };
 
-  const handleDownloadDoc = (doc) => {
+  const handleDownloadDoc = async (doc) => {
+    let targetDoc = doc;
+    if (!targetDoc.fileData || targetDoc.fileData === 'SERVER_STORED' || !targetDoc.fileData.startsWith('data:')) {
+      const fetched = await fetchNotesDocumentById(doc.id);
+      if (fetched && fetched.fileData) {
+        targetDoc = fetched;
+      }
+    }
+
     const element = document.createElement('a');
-    if (doc.fileData && doc.fileData.startsWith('data:')) {
-      element.href = doc.fileData;
-      element.download = doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'pdf'}`;
+    if (targetDoc.fileData && targetDoc.fileData.startsWith('data:')) {
+      element.href = targetDoc.fileData;
+      element.download = targetDoc.fileName || `${targetDoc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${targetDoc.fileType || 'pdf'}`;
     } else {
-      const content = doc.fileData && doc.fileData !== 'DATA_EMBEDDED'
-        ? doc.fileData
-        : `QuizMind UPSC Study Material Attachment: ${doc.title}\nSubject: ${doc.subject}\nDate: ${doc.uploadDate}\nAuthor: ${doc.uploadedBy}`;
+      const content = targetDoc.fileData && targetDoc.fileData !== 'DATA_EMBEDDED' && targetDoc.fileData !== 'SERVER_STORED'
+        ? targetDoc.fileData
+        : `QuizMind UPSC Study Material Attachment: ${targetDoc.title}\nSubject: ${targetDoc.subject}\nDate: ${targetDoc.uploadDate}\nAuthor: ${targetDoc.uploadedBy}`;
       const blob = new Blob([content], { type: 'text/plain' });
       element.href = URL.createObjectURL(blob);
-      element.download = doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'txt'}`;
+      element.download = targetDoc.fileName || `${targetDoc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${targetDoc.fileType || 'txt'}`;
     }
     document.body.appendChild(element);
     element.click();

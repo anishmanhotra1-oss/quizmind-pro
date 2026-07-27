@@ -219,15 +219,36 @@ ENSO is a periodic fluctuation in sea surface temperatures (SST) and atmospheric
 ];
 
 export async function fetchLiveUPSCNotes() {
+  const localNotes = getUPSCNotes();
+  let serverNotes = [];
+
   try {
     const res = await fetch('/api/notes');
     if (res.ok) {
-      const serverNotes = await res.json();
-      localStorage.setItem('QUIZMIND_UPSC_NOTES', JSON.stringify(serverNotes));
-      return serverNotes;
+      serverNotes = await res.json();
     }
   } catch (e) {}
-  return getUPSCNotes();
+
+  if (!Array.isArray(serverNotes)) serverNotes = [];
+
+  const notesMap = new Map();
+  if (Array.isArray(localNotes)) {
+    localNotes.forEach(n => {
+      if (n && (n.id || n.title)) {
+        notesMap.set(n.id || n.title.toLowerCase().trim(), n);
+      }
+    });
+  }
+
+  serverNotes.forEach(sn => {
+    if (sn && (sn.id || sn.title)) {
+      notesMap.set(sn.id || sn.title.toLowerCase().trim(), sn);
+    }
+  });
+
+  const merged = Array.from(notesMap.values());
+  localStorage.setItem('QUIZMIND_UPSC_NOTES', JSON.stringify(merged));
+  return merged;
 }
 
 export function getUPSCNotes() {
@@ -319,17 +340,57 @@ function safeSaveLocalStorage(key, items) {
 }
 
 export async function fetchLiveNotesDocuments() {
+  const localDocs = getNotesDocuments();
+  let serverDocs = [];
+
   try {
     const res = await fetch('/api/notes/documents');
     if (res.ok) {
-      const serverDocs = await res.json();
-      if (Array.isArray(serverDocs)) {
-        safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, serverDocs);
-        return serverDocs;
-      }
+      serverDocs = await res.json();
     }
   } catch (e) {}
-  return getNotesDocuments();
+
+  if (!Array.isArray(serverDocs)) serverDocs = [];
+
+  const docMap = new Map();
+  if (Array.isArray(localDocs)) {
+    localDocs.forEach(d => {
+      if (d && (d.id || d.title)) {
+        docMap.set(d.id || d.title.toLowerCase().trim(), d);
+      }
+    });
+  }
+
+  serverDocs.forEach(sd => {
+    if (sd && (sd.id || sd.title)) {
+      const key = sd.id || sd.title.toLowerCase().trim();
+      const local = docMap.get(key);
+      if (local) {
+        const fileData = (sd.fileData && sd.fileData !== 'SERVER_STORED' && sd.fileData !== '') 
+          ? sd.fileData 
+          : (local.fileData || sd.fileData);
+        docMap.set(key, { ...sd, fileData });
+      } else {
+        docMap.set(key, sd);
+      }
+    }
+  });
+
+  const mergedDocs = Array.from(docMap.values());
+  safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, mergedDocs);
+  return mergedDocs;
+}
+
+export async function fetchNotesDocumentById(docId) {
+  try {
+    const res = await fetch(`/api/notes/documents/${docId}`);
+    if (res.ok) {
+      const doc = await res.json();
+      if (doc && doc.id) return doc;
+    }
+  } catch (e) {}
+  const local = getNotesDocuments().find(d => d.id === docId);
+  return local || null;
 }
 
 export function getNotesDocuments() {

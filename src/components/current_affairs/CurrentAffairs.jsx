@@ -7,7 +7,8 @@ import {
 } from 'lucide-react';
 import { 
   CATEGORIES, fetchCurrentAffairs, addCustomCurrentAffairs, deleteCustomCurrentAffairs,
-  getCADocuments, addCADocument, deleteCADocument, fetchLiveCADocuments, fetchLiveCustomCurrentAffairs 
+  getCADocuments, addCADocument, deleteCADocument, fetchLiveCADocuments, fetchLiveCustomCurrentAffairs,
+  fetchCADocumentById
 } from '../../services/current_affairs_service';
 import { FormattedContentRenderer } from '../common/FormattedContentRenderer';
 
@@ -56,6 +57,7 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
   const [newTitle, setNewTitle] = useState('');
   const [newCategory, setNewCategory] = useState('national');
   const [newSource, setNewSource] = useState('PIB Delhi / Editorial');
+  const [newSourceUrl, setNewSourceUrl] = useState('');
   const [newSummary, setNewSummary] = useState('');
   const [newContent, setNewContent] = useState('');
 
@@ -133,11 +135,13 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
       title: newTitle.trim(),
       category: newCategory,
       source: newSource.trim(),
+      sourceUrl: newSourceUrl.trim(),
       summary: newSummary.trim(),
       content: newContent.trim()
     });
 
     setNewTitle('');
+    setNewSourceUrl('');
     setNewSummary('');
     setNewContent('');
     setShowAddArticleModal(false);
@@ -269,18 +273,26 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
     }
   };
 
-  const handleDownloadDoc = (doc) => {
+  const handleDownloadDoc = async (doc) => {
+    let targetDoc = doc;
+    if (!targetDoc.fileData || targetDoc.fileData === 'SERVER_STORED' || !targetDoc.fileData.startsWith('data:')) {
+      const fetched = await fetchCADocumentById(doc.id);
+      if (fetched && fetched.fileData) {
+        targetDoc = fetched;
+      }
+    }
+
     const element = document.createElement('a');
-    if (doc.fileData && doc.fileData.startsWith('data:')) {
-      element.href = doc.fileData;
-      element.download = doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'pdf'}`;
+    if (targetDoc.fileData && targetDoc.fileData.startsWith('data:')) {
+      element.href = targetDoc.fileData;
+      element.download = targetDoc.fileName || `${targetDoc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${targetDoc.fileType || 'pdf'}`;
     } else {
-      const content = doc.fileData && doc.fileData !== 'DATA_EMBEDDED'
-        ? doc.fileData
-        : `QuizMind Current Affairs Attachment: ${doc.title}\nCategory: ${doc.category}\nUpload Date: ${doc.uploadDate}\nUploaded By: ${doc.uploadedBy}`;
+      const content = targetDoc.fileData && targetDoc.fileData !== 'DATA_EMBEDDED' && targetDoc.fileData !== 'SERVER_STORED'
+        ? targetDoc.fileData
+        : `QuizMind Current Affairs Attachment: ${targetDoc.title}\nCategory: ${targetDoc.category}\nUpload Date: ${targetDoc.uploadDate}\nUploaded By: ${targetDoc.uploadedBy}`;
       const blob = new Blob([content], { type: 'text/plain' });
       element.href = URL.createObjectURL(blob);
-      element.download = doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${doc.fileType || 'txt'}`;
+      element.download = targetDoc.fileName || `${targetDoc.title.replace(/[^a-zA-Z0-9]/g, '_')}.${targetDoc.fileType || 'txt'}`;
     }
     document.body.appendChild(element);
     element.click();
@@ -623,6 +635,70 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
             <FormattedContentRenderer content={selectedArticle.content || selectedArticle.summary} />
           </div>
 
+          {/* External News Source Link Box for Students */}
+          {(() => {
+            const targetUrl = selectedArticle.sourceUrl || selectedArticle.url || selectedArticle.link || `https://news.google.com/search?q=${encodeURIComponent(selectedArticle.title)}`;
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(59, 130, 246, 0.12))',
+                border: '1px solid rgba(6, 182, 212, 0.35)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.25rem 1.5rem',
+                marginBottom: '2rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                  <div style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '12px',
+                    background: 'rgba(6, 182, 212, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--accent-cyan)'
+                  }}>
+                    <Globe size={22} />
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
+                      Official External News Source
+                    </h4>
+                    <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', margin: '3px 0 0 0' }}>
+                      Read complete live news coverage & original report from <strong>{selectedArticle.source || 'Original News Source'}</strong>
+                    </p>
+                  </div>
+                </div>
+
+                <a
+                  href={targetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                  style={{
+                    background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                    border: 'none',
+                    padding: '0.7rem 1.3rem',
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.55rem',
+                    boxShadow: '0 0 16px rgba(6, 182, 212, 0.35)'
+                  }}
+                >
+                  <span>Read Full News from Source</span>
+                  <ExternalLink size={16} />
+                </a>
+              </div>
+            );
+          })()}
+
           {/* Action Bar */}
           <div style={{
             display: 'flex',
@@ -828,6 +904,17 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
                     onChange={e => setNewSource(e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">External News Source URL (Optional)</label>
+                <input
+                  type="url"
+                  className="custom-input"
+                  placeholder="https://pib.gov.in or original news article link..."
+                  value={newSourceUrl}
+                  onChange={e => setNewSourceUrl(e.target.value)}
+                />
               </div>
 
               <div className="input-group">

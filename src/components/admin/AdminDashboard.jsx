@@ -7,8 +7,8 @@ import { ActiveQuizCard } from './ActiveQuizCard';
 import { generateQuizWithGemini, generateSmartFallbackQuiz } from '../../services/gemini_quiz_service';
 import { createQuizInDB, fetchAdminQuizzes } from '../../services/supabase';
 import { getRegisteredStudents, fetchLiveRegisteredStudents } from '../../services/student_service';
-import { getUPSCNotes, addUPSCNote, deleteUPSCNote, UPSC_SUBJECTS, addNotesDocument, getNotesDocuments, fetchLiveNotesDocuments } from '../../services/notes_service';
-import { getCustomCurrentAffairs, addCustomCurrentAffairs, deleteCustomCurrentAffairs } from '../../services/current_affairs_service';
+import { getUPSCNotes, addUPSCNote, deleteUPSCNote, UPSC_SUBJECTS, addNotesDocument, getNotesDocuments, fetchLiveNotesDocuments, fetchLiveUPSCNotes } from '../../services/notes_service';
+import { getCustomCurrentAffairs, addCustomCurrentAffairs, deleteCustomCurrentAffairs, fetchLiveCustomCurrentAffairs } from '../../services/current_affairs_service';
 
 export function AdminDashboard({ onSelectQuizForLeaderboard }) {
   const [quizzes, setQuizzes] = useState([]);
@@ -33,6 +33,7 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
   const [caTitle, setCaTitle] = useState('');
   const [caCategory, setCaCategory] = useState('national');
   const [caSource, setCaSource] = useState('Admin Editorial / PIB');
+  const [caSourceUrl, setCaSourceUrl] = useState('');
   const [caSummary, setCaSummary] = useState('');
   const [caContent, setCaContent] = useState('');
 
@@ -135,12 +136,22 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
     }
   };
 
-  const loadNotes = () => {
-    setNotes(getUPSCNotes());
+  const loadNotes = async () => {
+    try {
+      const list = await fetchLiveUPSCNotes();
+      setNotes(list || []);
+    } catch (e) {
+      setNotes(getUPSCNotes());
+    }
   };
 
-  const loadCA = () => {
-    setCurrentAffairs(getCustomCurrentAffairs());
+  const loadCA = async () => {
+    try {
+      const list = await fetchLiveCustomCurrentAffairs();
+      setCurrentAffairs(list || []);
+    } catch (e) {
+      setCurrentAffairs(getCustomCurrentAffairs());
+    }
   };
 
   useEffect(() => {
@@ -151,10 +162,12 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
     loadCA();
     loadExternalLinks();
 
-    // Auto-update student directory every 3 seconds when students log in from any device
+    // Auto-update student directory, notes, and current affairs every 3 seconds
     const studentPollInterval = setInterval(() => {
       loadStudents();
       loadExternalLinks();
+      loadNotes();
+      loadCA();
     }, 3000);
 
     const handlePrefill = (e) => {
@@ -183,11 +196,13 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
       title: caTitle.trim(),
       category: caCategory,
       source: caSource.trim(),
+      sourceUrl: caSourceUrl.trim(),
       summary: caSummary.trim(),
       content: caContent.trim()
     });
 
     setCaTitle('');
+    setCaSourceUrl('');
     setCaSummary('');
     setCaContent('');
     setShowCAModal(false);
@@ -876,6 +891,17 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
                     onChange={e => setCaSource(e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">External News Source URL (Optional)</label>
+                <input
+                  type="url"
+                  className="custom-input"
+                  placeholder="https://pib.gov.in or original news article link..."
+                  value={caSourceUrl}
+                  onChange={e => setCaSourceUrl(e.target.value)}
+                />
               </div>
 
               <div className="input-group">
