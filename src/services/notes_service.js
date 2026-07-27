@@ -341,7 +341,7 @@ function safeSaveLocalStorage(key, items) {
 
 export async function fetchLiveNotesDocuments() {
   const localDocs = getNotesDocuments();
-  let serverDocs = [];
+  let serverDocs = null;
 
   try {
     const res = await fetch('/api/notes/documents');
@@ -350,35 +350,34 @@ export async function fetchLiveNotesDocuments() {
     }
   } catch (e) {}
 
-  if (!Array.isArray(serverDocs)) serverDocs = [];
+  if (Array.isArray(serverDocs)) {
+    const localMap = new Map();
+    if (Array.isArray(localDocs)) {
+      localDocs.forEach(d => {
+        if (d && (d.id || d.title)) {
+          const key = d.id || d.title.toLowerCase().trim();
+          localMap.set(key, d);
+          if (d.title) localMap.set(d.title.toLowerCase().trim(), d);
+        }
+      });
+    }
 
-  const docMap = new Map();
-  if (Array.isArray(localDocs)) {
-    localDocs.forEach(d => {
-      if (d && (d.id || d.title)) {
-        docMap.set(d.id || d.title.toLowerCase().trim(), d);
+    const merged = serverDocs.map(sd => {
+      const key = sd.id || (sd.title ? sd.title.toLowerCase().trim() : '');
+      const local = localMap.get(key) || (sd.title ? localMap.get(sd.title.toLowerCase().trim()) : null);
+      if (local && local.fileData && local.fileData.startsWith('data:')) {
+        if (!sd.fileData || sd.fileData === 'SERVER_STORED' || sd.fileData === '') {
+          return { ...sd, fileData: local.fileData };
+        }
       }
+      return sd;
     });
+
+    safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, merged);
+    return merged;
   }
 
-  serverDocs.forEach(sd => {
-    if (sd && (sd.id || sd.title)) {
-      const key = sd.id || sd.title.toLowerCase().trim();
-      const local = docMap.get(key);
-      if (local) {
-        const fileData = (sd.fileData && sd.fileData !== 'SERVER_STORED' && sd.fileData !== '') 
-          ? sd.fileData 
-          : (local.fileData || sd.fileData);
-        docMap.set(key, { ...sd, fileData });
-      } else {
-        docMap.set(key, sd);
-      }
-    }
-  });
-
-  const mergedDocs = Array.from(docMap.values());
-  safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, mergedDocs);
-  return mergedDocs;
+  return localDocs;
 }
 
 export async function fetchNotesDocumentById(docId) {
@@ -403,8 +402,9 @@ export function getNotesDocuments() {
 
 export async function addNotesDocument(doc) {
   const current = getNotesDocuments();
+  const docId = 'notes-doc-' + Date.now();
   const newDoc = {
-    id: 'notes-doc-' + Date.now(),
+    id: docId,
     title: doc.title,
     subject: doc.subject || 'all',
     fileType: doc.fileType || 'pdf',
@@ -423,12 +423,14 @@ export async function addNotesDocument(doc) {
     });
     if (res.ok) {
       const serverDoc = await res.json();
-      const updated = [serverDoc, ...current];
+      const filteredCurrent = current.filter(d => d.id !== newDoc.id && d.title !== newDoc.title);
+      const updated = [serverDoc, ...filteredCurrent];
       safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, updated);
       return serverDoc;
     }
   } catch (e) {}
 
+  const filteredCurrent = current.filter(d => d.id !== newDoc.id && d.title !== newDoc.title);
   const updated = [newDoc, ...current];
   safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, updated);
   return newDoc;
@@ -439,7 +441,8 @@ export async function deleteNotesDocument(docId, userRole = 'student') {
     return getNotesDocuments();
   }
   const current = getNotesDocuments();
-  const updated = current.filter(d => d.id !== docId);
+  const cleanId = String(docId).trim();
+  const updated = current.filter(d => d.id !== cleanId && d.id !== cleanId.replace(/^notes-doc-/, 'doc-note-') && d.id !== cleanId.replace(/^doc-note-/, 'notes-doc-'));
   safeSaveLocalStorage(STORAGE_KEY_NOTES_DOCS, updated);
 
   try {

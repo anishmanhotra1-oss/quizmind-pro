@@ -330,8 +330,11 @@ async function saveNotesDocument(docData) {
   const db = await readDb();
   if (!db.notesDocuments) db.notesDocuments = [];
 
+  const targetId = docData.id || ('doc-note-' + Date.now());
+  const existingIdx = db.notesDocuments.findIndex(d => d.id === targetId || d.title === docData.title);
+
   const newDoc = {
-    id: 'doc-note-' + Date.now(),
+    id: targetId,
     title: docData.title,
     subject: docData.subject || 'all',
     fileType: docData.fileType || 'pdf',
@@ -342,7 +345,12 @@ async function saveNotesDocument(docData) {
     uploadedBy: docData.uploadedBy || 'UPSC Admin Faculty'
   };
 
-  db.notesDocuments.unshift(newDoc);
+  if (existingIdx !== -1) {
+    db.notesDocuments[existingIdx] = newDoc;
+  } else {
+    db.notesDocuments.unshift(newDoc);
+  }
+
   await writeDb(db);
   return newDoc;
 }
@@ -350,7 +358,8 @@ async function saveNotesDocument(docData) {
 async function deleteNotesDocument(docId) {
   const db = await readDb();
   if (!db.notesDocuments) return [];
-  db.notesDocuments = db.notesDocuments.filter(d => d.id !== docId);
+  const cleanId = String(docId).trim();
+  db.notesDocuments = db.notesDocuments.filter(d => d.id !== cleanId && d.id !== cleanId.replace(/^notes-doc-/, 'doc-note-') && d.id !== cleanId.replace(/^doc-note-/, 'notes-doc-'));
   await writeDb(db);
   return db.notesDocuments;
 }
@@ -417,8 +426,11 @@ async function saveCADocument(docData) {
   const db = await readDb();
   if (!db.caDocuments) db.caDocuments = [];
 
+  const targetId = docData.id || ('doc-ca-' + Date.now());
+  const existingIdx = db.caDocuments.findIndex(d => d.id === targetId || d.title === docData.title);
+
   const newDoc = {
-    id: 'doc-ca-' + Date.now(),
+    id: targetId,
     title: docData.title,
     category: docData.category || 'all',
     fileType: docData.fileType || 'pdf',
@@ -429,7 +441,12 @@ async function saveCADocument(docData) {
     uploadedBy: docData.uploadedBy || 'Current Affairs Faculty'
   };
 
-  db.caDocuments.unshift(newDoc);
+  if (existingIdx !== -1) {
+    db.caDocuments[existingIdx] = newDoc;
+  } else {
+    db.caDocuments.unshift(newDoc);
+  }
+
   await writeDb(db);
   return newDoc;
 }
@@ -437,7 +454,8 @@ async function saveCADocument(docData) {
 async function deleteCADocument(docId) {
   const db = await readDb();
   if (!db.caDocuments) return [];
-  db.caDocuments = db.caDocuments.filter(d => d.id !== docId);
+  const cleanId = String(docId).trim();
+  db.caDocuments = db.caDocuments.filter(d => d.id !== cleanId && d.id !== cleanId.replace(/^ca-doc-/, 'doc-ca-') && d.id !== cleanId.replace(/^doc-ca-/, 'ca-doc-'));
   await writeDb(db);
   return db.caDocuments;
 }
