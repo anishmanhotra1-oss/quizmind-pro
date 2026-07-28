@@ -446,8 +446,12 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
 
         <a
           href="https://upsc-notes-2vb7.onrender.com/"
-          target="_blank"
+          target="_self"
           rel="noopener noreferrer"
+          onClick={(e) => {
+            e.preventDefault();
+            window.location.href = "https://upsc-notes-2vb7.onrender.com/";
+          }}
           className="btn btn-primary"
           style={{
             background: 'linear-gradient(135deg, #d97706, #7c3aed)',

@@ -63,7 +63,7 @@ export function StudentJoin({ onStartQuiz, defaultStudentName, onStudentLogin })
       const foundExt = externalLinks.find(l => l.access_code === cleanCode);
       if (foundExt) {
         const targetUrl = buildExternalQuizUrl(foundExt.externalUrl, cleanName, foundExt.topic);
-        window.open(targetUrl, '_blank');
+        window.location.href = targetUrl;
         setIsJoining(false);
         return;
       }
@@ -73,7 +73,7 @@ export function StudentJoin({ onStartQuiz, defaultStudentName, onStudentLogin })
       // Handle external link quiz returned by access code search
       if (quiz && (quiz.is_external || quiz.externalUrl)) {
         const targetUrl = buildExternalQuizUrl(quiz.externalUrl, cleanName, quiz.topic || quiz.title);
-        window.open(targetUrl, '_blank');
+        window.location.href = targetUrl;
         setIsJoining(false);
         return;
       }
@@ -301,8 +301,12 @@ export function StudentJoin({ onStartQuiz, defaultStudentName, onStudentLogin })
             </div>
             <a
               href="https://quizdaily-1.onrender.com"
-              target="_blank"
+              target="_self"
               rel="noopener noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = "https://quizdaily-1.onrender.com";
+              }}
               className="btn"
               style={{
                 width: '100%',
@@ -337,7 +341,7 @@ export function StudentJoin({ onStartQuiz, defaultStudentName, onStudentLogin })
                   onClick={() => {
                     const cleanName = studentName.trim() || 'Student';
                     const targetUrl = buildExternalQuizUrl(link.externalUrl, cleanName, link.topic);
-                    window.open(targetUrl, '_blank');
+                    window.location.href = targetUrl;
                   }}
                   style={{
                     background: 'rgba(168, 85, 247, 0.08)',

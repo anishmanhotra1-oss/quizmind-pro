@@ -40,7 +40,7 @@ export function HomePage({ onNavigate, onStartQuiz, defaultStudentName }) {
       const foundExt = externalLinks.find(l => l.access_code === cleanCode);
       if (foundExt) {
         const targetUrl = buildExternalQuizUrl(foundExt.externalUrl, cleanName, foundExt.topic);
-        window.open(targetUrl, '_blank');
+        window.location.href = targetUrl;
         setIsJoining(false);
         return;
       }
@@ -49,7 +49,7 @@ export function HomePage({ onNavigate, onStartQuiz, defaultStudentName }) {
 
       if (quiz && (quiz.is_external || quiz.externalUrl)) {
         const targetUrl = buildExternalQuizUrl(quiz.externalUrl, cleanName, quiz.topic || quiz.title);
-        window.open(targetUrl, '_blank');
+        window.location.href = targetUrl;
         setIsJoining(false);
         return;
       }
@@ -280,7 +280,7 @@ export function HomePage({ onNavigate, onStartQuiz, defaultStudentName }) {
                         setAccessCode(ext.access_code);
                         const cleanName = studentName.trim() || 'Student';
                         const targetUrl = buildExternalQuizUrl(ext.externalUrl, cleanName, ext.topic);
-                        window.open(targetUrl, '_blank');
+                        window.location.href = targetUrl;
                       }}
                       style={{
                         background: accessCode === ext.access_code ? 'rgba(168, 85, 247, 0.25)' : 'rgba(168, 85, 247, 0.08)',
