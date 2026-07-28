@@ -407,67 +407,6 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
         </div>
       </div>
 
-      {/* Search & Subject Filter Bar */}
-      <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1.75rem', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          
-          <div style={{ position: 'relative' }}>
-            <Search size={18} color="#f59e0b" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-            <input
-              type="text"
-              className="custom-input"
-              style={{ paddingLeft: '2.8rem', height: '46px', width: '100%', fontSize: '0.95rem', borderColor: 'rgba(245, 158, 11, 0.3)' }}
-              placeholder="Search UPSC topics (e.g. Fundamental Rights, Bhakti Movement, MPC, Monsoon)..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.6rem', overflowX: 'auto', paddingBottom: '4px' }}>
-            {UPSC_SUBJECTS.map(sub => {
-              const isActive = selectedSubject === sub.id;
-              const count = getSubjectNoteCount(sub.id);
-              return (
-                <button
-                  key={sub.id}
-                  onClick={() => setSelectedSubject(sub.id)}
-                  style={{
-                    padding: '0.55rem 1.05rem',
-                    borderRadius: '22px',
-                    border: '1px solid ' + (isActive ? '#f59e0b' : 'var(--border-light)'),
-                    background: isActive ? sub.gradient : 'rgba(255, 255, 255, 0.05)',
-                    color: isActive ? '#ffffff' : 'var(--text-muted)',
-                    fontWeight: 700,
-                    fontSize: '0.84rem',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'var(--transition-fast)',
-                    boxShadow: isActive ? '0 4px 18px rgba(245, 158, 11, 0.35)' : 'none'
-                  }}
-                >
-                  {renderSubjectIcon(sub.icon)}
-                  <span>{sub.label}</span>
-                  <span style={{
-                    background: isActive ? 'rgba(255, 255, 255, 0.25)' : 'rgba(245, 158, 11, 0.15)',
-                    color: isActive ? '#ffffff' : '#f59e0b',
-                    padding: '2px 8px',
-                    borderRadius: '10px',
-                    fontSize: '0.75rem',
-                    fontWeight: 800
-                  }}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-        </div>
-      </div>
-
       {/* UPSC Notes Vault Link Banner */}
       <div className="glass-panel" style={{ 
         padding: '1.25rem 1.5rem', 
@@ -529,6 +468,67 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
           <span>UPSC NOTES</span>
           <ExternalLink size={18} />
         </a>
+      </div>
+
+      {/* Search & Subject Filter Bar */}
+      <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1.75rem', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          
+          <div style={{ position: 'relative' }}>
+            <Search size={18} color="#f59e0b" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              className="custom-input"
+              style={{ paddingLeft: '2.8rem', height: '46px', width: '100%', fontSize: '0.95rem', borderColor: 'rgba(245, 158, 11, 0.3)' }}
+              placeholder="Search UPSC topics (e.g. Fundamental Rights, Bhakti Movement, MPC, Monsoon)..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.6rem', overflowX: 'auto', paddingBottom: '4px' }}>
+            {UPSC_SUBJECTS.map(sub => {
+              const isActive = selectedSubject === sub.id;
+              const count = getSubjectNoteCount(sub.id);
+              return (
+                <button
+                  key={sub.id}
+                  onClick={() => setSelectedSubject(sub.id)}
+                  style={{
+                    padding: '0.55rem 1.05rem',
+                    borderRadius: '22px',
+                    border: '1px solid ' + (isActive ? '#f59e0b' : 'var(--border-light)'),
+                    background: isActive ? sub.gradient : 'rgba(255, 255, 255, 0.05)',
+                    color: isActive ? '#ffffff' : 'var(--text-muted)',
+                    fontWeight: 700,
+                    fontSize: '0.84rem',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'var(--transition-fast)',
+                    boxShadow: isActive ? '0 4px 18px rgba(245, 158, 11, 0.35)' : 'none'
+                  }}
+                >
+                  {renderSubjectIcon(sub.icon)}
+                  <span>{sub.label}</span>
+                  <span style={{
+                    background: isActive ? 'rgba(255, 255, 255, 0.25)' : 'rgba(245, 158, 11, 0.15)',
+                    color: isActive ? '#ffffff' : '#f59e0b',
+                    padding: '2px 8px',
+                    borderRadius: '10px',
+                    fontSize: '0.75rem',
+                    fontWeight: 800
+                  }}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+        </div>
       </div>
 
       {/* Notes Cards Grid */}

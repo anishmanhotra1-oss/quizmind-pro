@@ -454,57 +454,6 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
         );
       })()}
 
-      {/* Search & Category Filter Bar */}
-      <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1.75rem', borderRadius: 'var(--radius-xl)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          
-          <div style={{ position: 'relative' }}>
-            <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-            <input
-              type="text"
-              className="custom-input"
-              style={{ paddingLeft: '3rem', height: '46px', fontSize: '0.95rem' }}
-              placeholder="Search current affairs by keyword, organization, or topic (e.g. ISRO, RBI, Climate, Sports)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.6rem', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
-            {CATEGORIES.map(cat => {
-              const isActive = activeCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.55rem 1rem',
-                    borderRadius: '24px',
-                    fontSize: '0.86rem',
-                    fontWeight: 700,
-                    whiteSpace: 'nowrap',
-                    cursor: 'pointer',
-                    transition: 'all 0.25s ease',
-                    border: isActive ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid var(--border-light)',
-                    background: isActive 
-                      ? 'linear-gradient(135deg, var(--primary-indigo), var(--primary-violet-dark))' 
-                      : 'var(--bg-card)',
-                    color: isActive ? '#ffffff' : 'var(--text-muted)',
-                    boxShadow: isActive ? '0 4px 16px rgba(99, 102, 241, 0.4)' : 'none'
-                  }}
-                >
-                  {renderCategoryIcon(cat.icon)}
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
       {/* Daily Current Affairs Portal Link Banner */}
       <div className="glass-panel" style={{ 
         padding: '1.25rem 1.5rem', 
@@ -566,6 +515,57 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
           <span>DAILY CURRENT AFFAIRS</span>
           <ExternalLink size={18} />
         </a>
+      </div>
+
+      {/* Search & Category Filter Bar */}
+      <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1.75rem', borderRadius: 'var(--radius-xl)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          
+          <div style={{ position: 'relative' }}>
+            <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+            <input
+              type="text"
+              className="custom-input"
+              style={{ paddingLeft: '3rem', height: '46px', fontSize: '0.95rem' }}
+              placeholder="Search current affairs by keyword, organization, or topic (e.g. ISRO, RBI, Climate, Sports)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.6rem', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+            {CATEGORIES.map(cat => {
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.55rem 1rem',
+                    borderRadius: '24px',
+                    fontSize: '0.86rem',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                    transition: 'all 0.25s ease',
+                    border: isActive ? '1px solid rgba(255, 255, 255, 0.4)' : '1px solid var(--border-light)',
+                    background: isActive 
+                      ? 'linear-gradient(135deg, var(--primary-indigo), var(--primary-violet-dark))' 
+                      : 'var(--bg-card)',
+                    color: isActive ? '#ffffff' : 'var(--text-muted)',
+                    boxShadow: isActive ? '0 4px 16px rgba(99, 102, 241, 0.4)' : 'none'
+                  }}
+                >
+                  {renderCategoryIcon(cat.icon)}
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Article Detail Reader View */}
