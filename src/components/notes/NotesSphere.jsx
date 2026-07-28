@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, Landmark, Scroll, TrendingUp, Globe, Cpu, ShieldAlert, Scale, 
-  Search, Plus, Sparkles, X, FileText, Download, Copy, Check, ArrowLeft, Trash2, Zap, Clock, Award, Star, Bookmark, Upload
+  Search, Plus, Sparkles, X, FileText, Download, Copy, Check, ArrowLeft, Trash2, Zap, Clock, Award, Star, Bookmark, Upload, ExternalLink
 } from 'lucide-react';
 import { 
   getUPSCNotes, addUPSCNote, deleteUPSCNote, UPSC_SUBJECTS,
@@ -468,87 +468,67 @@ export function NotesSphere({ userRole, onBackToDashboard, onGenerateQuizFromNot
         </div>
       </div>
 
-      {/* Downloadable Study Documents Vault Section */}
-      <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.75rem', borderRadius: 'var(--radius-xl)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <FileText size={20} color="#f59e0b" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Downloadable UPSC Study Documents & Dossiers</h3>
+      {/* UPSC Notes Vault Link Banner */}
+      <div className="glass-panel" style={{ 
+        padding: '1.25rem 1.5rem', 
+        marginBottom: '1.75rem', 
+        borderRadius: 'var(--radius-xl)', 
+        border: '1px solid rgba(245, 158, 11, 0.35)',
+        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.08))',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '1rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #d97706, #7c3aed)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            boxShadow: '0 0 18px rgba(217, 119, 6, 0.4)'
+          }}>
+            <BookOpen size={22} />
           </div>
-
-          {userRole === 'admin' && (
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => setShowDocUploadModal(true)}
-              style={{ fontSize: '0.85rem', padding: '0.45rem 0.9rem', borderColor: '#f59e0b', color: '#f59e0b' }}
-            >
-              <Upload size={14} /> Upload Notes Document
-            </button>
-          )}
+          <div>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+              UPSC Notes & Study Material Vault 🏛️
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '3px 0 0 0' }}>
+              Access full GS Paper I-IV revision notes & study portal online.
+            </p>
+          </div>
         </div>
 
-        {filteredDocuments.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>No study documents uploaded for this subject category yet.</p>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-            {filteredDocuments.map(doc => (
-              <div 
-                key={doc.id} 
-                style={{ 
-                  background: 'rgba(245, 158, 11, 0.05)', 
-                  border: '1px solid rgba(245, 158, 11, 0.25)', 
-                  borderRadius: 'var(--radius-md)', 
-                  padding: '0.9rem 1.1rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: '0.75rem'
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                    <span style={{ 
-                      background: 'rgba(245, 158, 11, 0.2)', 
-                      color: '#f59e0b', 
-                      padding: '2px 8px', 
-                      borderRadius: '4px', 
-                      fontSize: '0.72rem', 
-                      fontWeight: 800,
-                      textTransform: 'uppercase'
-                    }}>
-                      {doc.fileType || 'PDF'} • {doc.fileSize || 'FILE'}
-                    </span>
-
-                    {userRole === 'admin' && (
-                      <button 
-                        onClick={(e) => handleDeleteDoc(e, doc.id)}
-                        style={{ background: 'none', border: 'none', color: 'var(--accent-rose)', cursor: 'pointer', padding: '2px' }}
-                        title="Delete File"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    )}
-                  </div>
-
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', lineHeight: '1.3' }}>
-                    {doc.title}
-                  </h4>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: '0.3rem' }}>
-                    Date: {doc.uploadDate} by {doc.uploadedBy}
-                  </div>
-                </div>
-
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => handleDownloadDoc(doc)}
-                  style={{ width: '100%', fontSize: '0.82rem', padding: '0.45rem', justifyContent: 'center', gap: '0.4rem', borderColor: 'rgba(245, 158, 11, 0.5)', color: '#f59e0b' }}
-                >
-                  <Download size={14} color="#f59e0b" /> Download Document
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        <a
+          href="https://upsc-notes-2vb7.onrender.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-primary"
+          style={{
+            background: 'linear-gradient(135deg, #d97706, #7c3aed)',
+            border: 'none',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '12px',
+            fontWeight: 800,
+            fontSize: '0.95rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.55rem',
+            textDecoration: 'none',
+            boxShadow: '0 4px 18px rgba(217, 119, 6, 0.35)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <span>UPSC NOTES</span>
+          <ExternalLink size={18} />
+        </a>
       </div>
 
       {/* Notes Cards Grid */}

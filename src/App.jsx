@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Sparkles, X } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { AuthPortal } from './components/auth/AuthPortal';
@@ -45,6 +46,7 @@ export default function App() {
   const [studentName, setStudentName] = useState(() => getStorageItem('QUIZMIND_STUDENT_NAME', ''));
   const [studentEmail, setStudentEmail] = useState(() => getStorageItem('QUIZMIND_STUDENT_EMAIL', ''));
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   
   const [viewState, setViewState] = useState(() => {
     const savedRole = getStorageItem('QUIZMIND_ROLE', 'student');
@@ -105,6 +107,7 @@ export default function App() {
     setUserRole('student');
     setIsAuthenticated(true);
     setView('student_join');
+    setShowWelcomeModal(true);
   };
 
   // Admin Password Protection Handler
@@ -117,18 +120,14 @@ export default function App() {
     setView('admin_dashboard');
   };
 
-  // Logout / Switch User
+  // Logout / Switch User (Preserves student identity & data)
   const handleLogout = () => {
     removeStorageItem('QUIZMIND_AUTH');
     removeStorageItem('QUIZMIND_ROLE');
-    removeStorageItem('QUIZMIND_STUDENT_NAME');
-    removeStorageItem('QUIZMIND_STUDENT_EMAIL');
     removeStorageItem('QUIZMIND_VIEW');
     
     setIsAuthenticated(false);
     setUserRole('student');
-    setStudentName('');
-    setStudentEmail('');
     setShowProfileModal(false);
     setViewState('home');
   };
@@ -292,6 +291,75 @@ export default function App() {
                 onClose={() => setShowProfileModal(false)}
                 onLogout={handleLogout}
               />
+            )}
+
+            {/* Student Welcome Modal Popup */}
+            {showWelcomeModal && (
+              <div className="modal-backdrop" onClick={() => setShowWelcomeModal(false)}>
+                <div className="modal-card" style={{ maxWidth: '500px', textAlign: 'center', padding: '2.5rem', borderRadius: 'var(--radius-xl)', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                  
+                  <button 
+                    onClick={() => setShowWelcomeModal(false)}
+                    style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
+                  >
+                    <X size={22} />
+                  </button>
+
+                  {/* Glowing Header Icon */}
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '20px',
+                    background: 'linear-gradient(135deg, var(--primary-indigo), #a855f7)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 1.25rem auto',
+                    boxShadow: '0 0 30px rgba(99, 102, 241, 0.5)'
+                  }}>
+                    <Sparkles size={32} color="#ffffff" />
+                  </div>
+
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--text-main)' }}>
+                    Welcome, <span className="gradient-text">{studentName || 'Student'}</span>! 🎉
+                  </h2>
+
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.98rem', lineHeight: '1.65', marginBottom: '1.75rem' }}>
+                    Welcome to QuizMind! Thank you so much for choosing our platform for your learning and exam preparation. We are thrilled to help you excel with daily quizzes, current affairs, and study materials.
+                  </p>
+
+                  <div style={{
+                    background: 'rgba(99, 102, 241, 0.1)',
+                    border: '1px solid rgba(99, 102, 241, 0.25)',
+                    padding: '0.85rem 1.25rem',
+                    borderRadius: '14px',
+                    marginBottom: '1.75rem',
+                    fontSize: '0.95rem',
+                    fontWeight: 800,
+                    color: 'var(--primary-violet)',
+                    letterSpacing: '0.5px'
+                  }}>
+                    from ANISH MANHOTRA
+                  </div>
+
+                  <button
+                    onClick={() => setShowWelcomeModal(false)}
+                    className="btn btn-primary"
+                    style={{
+                      width: '100%',
+                      padding: '0.85rem',
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      background: 'linear-gradient(135deg, var(--primary-indigo), #a855f7)',
+                      border: 'none',
+                      boxShadow: '0 4px 20px rgba(99, 102, 241, 0.4)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Get Started 🚀
+                  </button>
+                </div>
+              </div>
             )}
           </>
         )}

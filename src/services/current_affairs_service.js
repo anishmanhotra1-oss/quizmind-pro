@@ -103,6 +103,26 @@ export async function fetchLiveCustomCurrentAffairs() {
     });
   }
 
+  // Auto-delete / purge live news items older than 24 hours (86,400,000 ms)
+  const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  merged = merged.filter(item => {
+    // Only auto-delete live news items (not custom admin-created articles)
+    if (item.id && (item.id.startsWith('live-') || item.isLive)) {
+      let itemTime = item.timestamp;
+      if (!itemTime && item.date) {
+        itemTime = new Date(item.date).getTime();
+      }
+      if (itemTime && !isNaN(itemTime)) {
+        if ((now - itemTime) > TWENTY_FOUR_HOURS_MS) {
+          return false; // Auto-delete live news older than 24 hours
+        }
+      }
+    }
+    return true;
+  });
+
   localStorage.setItem(STORAGE_KEY_CUSTOM, JSON.stringify(merged));
   return merged;
 }

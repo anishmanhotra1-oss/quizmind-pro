@@ -47,54 +47,7 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  // External Quiz Link State
-  const [externalQuizLinks, setExternalQuizLinks] = useState([]);
-  const [showExtModal, setShowExtModal] = useState(false);
-  const [extTopic, setExtTopic] = useState('');
-  const [extUrl, setExtUrl] = useState('');
 
-  const loadExternalLinks = async () => {
-    try {
-      const res = await fetch('/api/student/quiz-links');
-      if (res.ok) {
-        const data = await res.json();
-        setExternalQuizLinks(data || []);
-      }
-    } catch (e) {}
-  };
-
-  const handleSaveExternalLinkSubmit = async (e) => {
-    e.preventDefault();
-    if (!extTopic.trim() || !extUrl.trim()) return;
-
-    try {
-      const res = await fetch('/api/admin/quiz-links', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: extTopic.trim(), externalUrl: extUrl.trim() })
-      });
-      if (res.ok) {
-        setExtTopic('');
-        setExtUrl('');
-        setShowExtModal(false);
-        await loadExternalLinks();
-      }
-    } catch (err) {
-      alert('Failed to save external quiz link.');
-    }
-  };
-
-  const handleDeleteExternalLink = async (linkId) => {
-    if (window.confirm('Delete this external AI quiz link?')) {
-      try {
-        await fetch(`/api/admin/quiz-links/${linkId}`, {
-          method: 'DELETE',
-          headers: { 'x-user-role': 'admin' }
-        });
-        await loadExternalLinks();
-      } catch (e) {}
-    }
-  };
 
   const loadQuizzes = async () => {
     setLoading(true);
@@ -160,12 +113,10 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
     loadStudents();
     loadNotes();
     loadCA();
-    loadExternalLinks();
 
     // Auto-update student directory, notes, and current affairs every 3 seconds
     const studentPollInterval = setInterval(() => {
       loadStudents();
-      loadExternalLinks();
       loadNotes();
       loadCA();
     }, 3000);
@@ -369,15 +320,6 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <button 
-            className="btn btn-secondary"
-            onClick={() => setShowExtModal(true)}
-            style={{ border: '1px solid var(--primary-indigo)', color: 'var(--primary-indigo)' }}
-          >
-            <Globe size={18} />
-            Link External AI Quiz 🌐
-          </button>
-
           <button 
             className="btn btn-primary"
             onClick={() => {
@@ -941,115 +883,7 @@ export function AdminDashboard({ onSelectQuizForLeaderboard }) {
         </div>
       )}
 
-      {/* Modal 5: External AI Quiz Link Manager */}
-      {showExtModal && (
-        <div className="modal-backdrop" onClick={() => setShowExtModal(false)}>
-          <div className="modal-card" style={{ width: '92%', maxWidth: '720px', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-            
-            <button 
-              onClick={() => setShowExtModal(false)}
-              style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
-            >
-              <X size={20} />
-            </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <Globe size={24} color="var(--primary-indigo)" />
-              <h3>External AI Quiz Link Studio</h3>
-            </div>
-
-            <form onSubmit={handleSaveExternalLinkSubmit} style={{ marginBottom: '2rem' }}>
-              <div className="input-group">
-                <label className="input-label">Topic Name</label>
-                <input
-                  type="text"
-                  className="custom-input"
-                  placeholder="e.g. Indian Constitution & Article 21"
-                  value={extTopic}
-                  onChange={e => setExtTopic(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="input-group">
-                <label className="input-label">External AI Quiz Site URL</label>
-                <input
-                  type="url"
-                  className="custom-input"
-                  placeholder="https://my-external-quiz-site.netlify.app"
-                  value={extUrl}
-                  onChange={e => setExtUrl(e.target.value)}
-                  required
-                />
-              </div>
-
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }}>
-                Save External Quiz Link & Generate Access Code 🌐
-              </button>
-            </form>
-
-            {/* Active External Links Roster */}
-            <div>
-              <h4 style={{ fontSize: '1rem', marginBottom: '0.75rem', fontWeight: 700 }}>
-                Active External AI Quiz Links ({externalQuizLinks.length})
-              </h4>
-
-              {externalQuizLinks.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>No external quiz links added yet.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {externalQuizLinks.map(item => (
-                    <div
-                      key={item.id}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        border: '1px solid var(--border-light)',
-                        borderRadius: '12px',
-                        padding: '0.85rem 1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '1rem'
-                      }}
-                    >
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>
-                          {item.topic}
-                        </div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px', wordBreak: 'break-all' }}>
-                          🔗 {item.externalUrl}
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span style={{
-                          background: 'linear-gradient(135deg, var(--primary-indigo), #7c3aed)',
-                          color: '#ffffff',
-                          padding: '0.35rem 0.75rem',
-                          borderRadius: '8px',
-                          fontFamily: 'monospace',
-                          fontWeight: 800,
-                          fontSize: '0.9rem'
-                        }}>
-                          {item.access_code}
-                        </span>
-
-                        <button
-                          onClick={() => handleDeleteExternalLink(item.id)}
-                          style={{ background: 'rgba(244, 63, 94, 0.12)', border: 'none', color: '#f43f5e', padding: '6px', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-          </div>
-        </div>
-      )}
     </div>
   );
 }

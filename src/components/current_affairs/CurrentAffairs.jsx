@@ -505,87 +505,67 @@ export function CurrentAffairs({ userRole, onGenerateQuizFromArticle, onBackToDa
         </div>
       </div>
 
-      {/* Uploaded Documents Vault Section for Current Affairs */}
-      <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', marginBottom: '1.75rem', borderRadius: 'var(--radius-xl)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <FileText size={20} color="var(--primary-indigo)" />
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Current Affairs Dossiers & Documents</h3>
+      {/* Daily Current Affairs Portal Link Banner */}
+      <div className="glass-panel" style={{ 
+        padding: '1.25rem 1.5rem', 
+        marginBottom: '1.75rem', 
+        borderRadius: 'var(--radius-xl)', 
+        border: '1px solid rgba(6, 182, 212, 0.3)',
+        background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(59, 130, 246, 0.08))',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '1rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            boxShadow: '0 0 16px rgba(6, 182, 212, 0.4)'
+          }}>
+            <Newspaper size={22} />
           </div>
-
-          {userRole === 'admin' && (
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => setShowDocUploadModal(true)}
-              style={{ fontSize: '0.85rem', padding: '0.45rem 0.9rem', borderColor: 'var(--primary-indigo)' }}
-            >
-              <Upload size={14} color="var(--primary-indigo)" /> Upload Document
-            </button>
-          )}
+          <div>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+              Daily Current Affairs Portal 📰
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '3px 0 0 0' }}>
+              Access full daily current affairs, prelims/mains dossiers & exam updates.
+            </p>
+          </div>
         </div>
 
-        {documents.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>No downloadable current affairs documents currently uploaded.</p>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-            {documents.map(doc => (
-              <div 
-                key={doc.id} 
-                style={{ 
-                  background: 'rgba(255, 255, 255, 0.03)', 
-                  border: '1px solid var(--border-light)', 
-                  borderRadius: 'var(--radius-md)', 
-                  padding: '0.9rem 1.1rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: '0.75rem'
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                    <span style={{ 
-                      background: 'rgba(99, 102, 241, 0.2)', 
-                      color: 'var(--primary-indigo)', 
-                      padding: '2px 8px', 
-                      borderRadius: '4px', 
-                      fontSize: '0.72rem', 
-                      fontWeight: 800,
-                      textTransform: 'uppercase'
-                    }}>
-                      {doc.fileType || 'PDF'} • {doc.fileSize || 'FILE'}
-                    </span>
-
-                    {userRole === 'admin' && (
-                      <button 
-                        onClick={(e) => handleDeleteDoc(e, doc.id)}
-                        style={{ background: 'none', border: 'none', color: 'var(--accent-rose)', cursor: 'pointer', padding: '2px' }}
-                        title="Delete Document"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    )}
-                  </div>
-
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', lineHeight: '1.3' }}>
-                    {doc.title}
-                  </h4>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: '0.3rem' }}>
-                    Uploaded: {doc.uploadDate} by {doc.uploadedBy}
-                  </div>
-                </div>
-
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => handleDownloadDoc(doc)}
-                  style={{ width: '100%', fontSize: '0.82rem', padding: '0.45rem', justifyContent: 'center', gap: '0.4rem', borderColor: 'rgba(99, 102, 241, 0.4)' }}
-                >
-                  <Download size={14} color="var(--primary-indigo)" /> Download File
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        <a
+          href="https://upsc-notes-2vb7.onrender.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-primary"
+          style={{
+            background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+            border: 'none',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '12px',
+            fontWeight: 800,
+            fontSize: '0.95rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.55rem',
+            textDecoration: 'none',
+            boxShadow: '0 4px 18px rgba(6, 182, 212, 0.35)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <span>DAILY CURRENT AFFAIRS</span>
+          <ExternalLink size={18} />
+        </a>
       </div>
 
       {/* Article Detail Reader View */}

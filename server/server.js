@@ -87,13 +87,15 @@ async function fetchLiveNewsRSS(rssUrl, category, categoryName) {
 
         const dateObj = pubDateMatch ? new Date(pubDateMatch[1]) : new Date();
         const formattedDate = dateObj.toISOString().split('T')[0];
+        const timestamp = dateObj.getTime();
 
         items.push({
-          id: `live-${category}-${Date.now()}-${count}`,
+          id: `live-${category}-${timestamp}-${count}`,
           title: cleanTitle,
           category,
           categoryName,
           date: formattedDate,
+          timestamp: timestamp,
           readTime: '2 min read',
           source,
           sourceUrl,
@@ -243,9 +245,18 @@ app.get('/api/current-affairs/live', async (req, res) => {
       const todayStr = new Date().toISOString().split('T')[0];
       mergedLiveArticles = mergedLiveArticles.map(art => ({
         ...art,
-        date: art.date || todayStr
+        date: art.date || todayStr,
+        timestamp: art.timestamp || (art.date ? new Date(art.date).getTime() : Date.now())
       }));
     }
+
+    // Auto-delete live news articles older than 24 hours (86,400,000 ms)
+    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+    mergedLiveArticles = mergedLiveArticles.filter(art => {
+      const artTime = art.timestamp || (art.date ? new Date(art.date).getTime() : now);
+      if (isNaN(artTime)) return true;
+      return (now - artTime) <= TWENTY_FOUR_HOURS_MS;
+    });
 
     liveNewsCache = {
       lastUpdated: now,

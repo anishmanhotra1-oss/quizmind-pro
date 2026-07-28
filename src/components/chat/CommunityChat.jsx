@@ -9,8 +9,18 @@ export function CommunityChat({ userRole, studentName, onBackToDashboard }) {
   const [sending, setSending] = useState(false);
   const [previewImageModal, setPreviewImageModal] = useState(null);
   const messagesEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const isUserScrolledUp = useRef(false);
+  const isInitialLoad = useRef(true);
 
   const currentUser = userRole === 'admin' ? 'Admin Faculty' : (studentName || 'Student Aspirant');
+
+  const handleContainerScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    isUserScrolledUp.current = distanceFromBottom > 80;
+  };
 
   useEffect(() => {
     fetchMessages();
@@ -22,11 +32,21 @@ export function CommunityChat({ userRole, studentName, onBackToDashboard }) {
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0) {
+      if (isInitialLoad.current) {
+        scrollToBottom(true);
+        isInitialLoad.current = false;
+      } else if (!isUserScrolledUp.current) {
+        scrollToBottom(false);
+      }
+    }
   }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (force = false) => {
+    if (!scrollContainerRef.current) return;
+    if (force || !isUserScrolledUp.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
   };
 
   const fetchMessages = async (silent = false) => {
@@ -117,6 +137,7 @@ export function CommunityChat({ userRole, studentName, onBackToDashboard }) {
     // Optimistic UI Update
     const updatedMessages = [...messages, newMsgObj];
     setMessages(updatedMessages);
+    setTimeout(() => scrollToBottom(true), 50);
 
     try {
       const res = await fetch('/api/chat/messages', {
@@ -217,15 +238,19 @@ export function CommunityChat({ userRole, studentName, onBackToDashboard }) {
         </div>
 
         {/* Message Stream */}
-        <div style={{ 
-          height: '420px', 
-          overflowY: 'auto', 
-          padding: '1.5rem', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: '1.25rem',
-          background: 'rgba(0, 0, 0, 0.1)'
-        }}>
+        <div 
+          ref={scrollContainerRef} 
+          onScroll={handleContainerScroll}
+          style={{ 
+            height: '420px', 
+            overflowY: 'auto', 
+            padding: '1.5rem', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '1.25rem',
+            background: 'rgba(0, 0, 0, 0.1)'
+          }}
+        >
           {messages.length === 0 ? (
             <div style={{ textAlign: 'center', margin: 'auto', color: 'var(--text-muted)' }}>
               <MessageSquare size={36} style={{ marginBottom: '0.75rem', opacity: 0.5 }} />

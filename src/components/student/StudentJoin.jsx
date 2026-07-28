@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogIn, KeyRound, User, Sparkles, AlertCircle, Play, BookOpen, Bookmark, ArrowRight, ExternalLink } from 'lucide-react';
+import { LogIn, KeyRound, User, Sparkles, AlertCircle, Play, BookOpen, Bookmark, ArrowRight, ExternalLink, Globe } from 'lucide-react';
 import { fetchQuizByAccessCode, fetchQuestionsForQuiz, fetchAdminQuizzes, fetchExternalQuizLinks, buildExternalQuizUrl } from '../../services/supabase';
 import { getUPSCNotes, UPSC_SUBJECTS } from '../../services/notes_service';
 import { registerStudentAccount } from '../../services/student_service';
@@ -262,13 +262,75 @@ export function StudentJoin({ onStartQuiz, defaultStudentName, onStudentLogin })
           </div>
         )}
 
-        {/* External AI Quiz Links Roster */}
-        {externalLinks.length > 0 && (
-          <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-light)' }}>
-            <span style={{ fontSize: '0.82rem', color: '#a855f7', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              🌐 External AI Quizzes ({externalLinks.length}):
-            </span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+        {/* Daily Quiz Section - Placed directly above Admin Published UPSC Revision Notes */}
+        <div style={{ marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-light)', textAlign: 'left' }}>
+          <span style={{ fontSize: '0.82rem', color: '#a855f7', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Globe size={16} /> Daily Quiz Portal
+          </span>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(99, 102, 241, 0.12))',
+            border: '1px solid rgba(168, 85, 247, 0.3)',
+            borderRadius: '16px',
+            padding: '1.25rem 1.25rem',
+            boxShadow: '0 4px 20px rgba(168, 85, 247, 0.15)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            gap: '1rem'
+          }}>
+            <div style={{
+              width: '50px',
+              height: '50px',
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 0 20px rgba(168, 85, 247, 0.4)'
+            }}>
+              <Globe size={26} color="#ffffff" />
+            </div>
+            <div>
+              <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px' }}>
+                Daily Quiz 🌐
+              </h4>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>
+                Launch QuizDaily to take interactive AI-generated daily quizzes & live tests.
+              </p>
+            </div>
+            <a
+              href="https://quizdaily-1.onrender.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn"
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+                color: '#ffffff',
+                border: 'none',
+                padding: '0.75rem 1.25rem',
+                borderRadius: '12px',
+                fontWeight: 800,
+                fontSize: '0.95rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                textDecoration: 'none',
+                boxShadow: '0 4px 15px rgba(168, 85, 247, 0.35)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <span>Launch Daily Quiz</span>
+              <ExternalLink size={18} />
+            </a>
+          </div>
+
+          {/* Dynamic External Links list if available */}
+          {externalLinks.length > 0 && (
+            <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               {externalLinks.map(link => (
                 <div
                   key={link.id}
@@ -314,34 +376,10 @@ export function StudentJoin({ onStartQuiz, defaultStudentName, onStudentLogin })
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Published UPSC Notes Directory on Student Dashboard */}
-        {publishedNotes.length > 0 && (
-          <div style={{ marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-light)', textAlign: 'left' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-              <span style={{ fontSize: '0.82rem', color: '#f59e0b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <BookOpen size={16} /> Admin Published UPSC Revision Notes ({publishedNotes.length}):
-              </span>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
-              {publishedNotes.slice(0, 3).map(note => {
-                const subObj = UPSC_SUBJECTS.find(s => s.id === note.subject) || {};
-                return (
-                  <div key={note.id} className="glass-panel" style={{ padding: '0.9rem 1rem', borderRadius: '14px', borderLeft: `3px solid ${subObj.badgeColor || '#f59e0b'}` }}>
-                    <span style={{ fontSize: '0.72rem', color: subObj.badgeColor || '#f59e0b', fontWeight: 800, display: 'block', marginBottom: '2px' }}>
-                      {note.paperTag || 'GS Paper'} • {note.subjectLabel}
-                    </span>
-                    <h5 style={{ fontSize: '0.9rem', lineHeight: '1.3', marginBottom: '4px' }}>{note.title}</h5>
-                    <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>✍️ {note.author}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
       </div>
     </div>
